@@ -318,10 +318,13 @@ enum WizStep {
   optionalIntro,
   optionalEdit,
   finalStep,
+  recommendations,
   financing,
   creditCard,
   loan,
 }
+
+enum ResultScenario { initial, optimized }
 
 class BudgetFlowScreen extends StatefulWidget {
   const BudgetFlowScreen({super.key});
@@ -385,6 +388,7 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
   bool loanCalculated = false;
   bool cardCalculated = false;
   bool? cardHas120DayGrace;
+  ResultScenario selectedScenario = ResultScenario.initial;
   double baselineMonthly = 0;
   double baselineTotal = 0;
   double finalMonthly = 0;
@@ -394,38 +398,44 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
       double.tryParse(monthsCtrl.text.replaceAll(',', '.')) ?? 0;
   double get target =>
       double.tryParse(targetCtrl.text.replaceAll(',', '.')) ?? 0;
-  double get shortfall => target - finalTotal;
+  double get activeMonthly => selectedScenario == ResultScenario.optimized
+      ? finalMonthly
+      : baselineMonthly;
+  double get activeTotal =>
+      selectedScenario == ResultScenario.optimized ? finalTotal : baselineTotal;
+  double get shortfall => target - activeTotal;
   double get totalReduction =>
       reductions.values.fold(0, (total, amount) => total + amount);
   double get depositRate =>
       double.tryParse(depositRateCtrl.text.replaceAll(',', '.')) ?? 8;
   double get depositProjection {
-    if (finalMonthly <= 0 || months <= 0 || depositRate <= 0) return 0;
+    if (activeMonthly <= 0 || months <= 0 || depositRate <= 0) return 0;
     var balance = 0.0;
     final monthlyRate = depositRate / 100 / 12;
     for (var index = 0; index < months.ceil(); index++) {
-      balance += finalMonthly;
+      balance += activeMonthly;
       balance *= 1 + monthlyRate;
     }
     return balance;
   }
 
   double get cashbackSavings {
-    final rows = <ExpenseRow>[...fixed, ...mandatory];
+    final rows = <ExpenseRow>[...fixed, ...mandatory, ...optional];
     final total = rows.fold(0.0, (sum, row) {
       final name = row.name.trim();
       if (!cashbackCategories.contains(name)) return sum;
-      return sum + (row.amount * months) + row.periodTotal;
+      final amount = row.amount * months + row.periodTotal;
+      return sum + amount;
     });
     return total * 0.05;
   }
 
-  double get cardThreshold => (finalMonthly > 0 ? finalMonthly : 0) * 3;
+  double get cardThreshold => (activeMonthly > 0 ? activeMonthly : 0) * 3;
   double get cardInterestPrincipal => cardHas120DayGrace == true
       ? math.max(shortfall - cardThreshold, 0)
       : shortfall;
-  int get cardRepaymentDays => finalMonthly > 0 && cardInterestPrincipal > 0
-      ? (cardInterestPrincipal / finalMonthly).ceil() * 30
+  int get cardRepaymentDays => activeMonthly > 0 && cardInterestPrincipal > 0
+      ? (cardInterestPrincipal / activeMonthly).ceil() * 30
       : 0;
   double get cardInterest => calculateCardInterest(
     cardInterestPrincipal,
@@ -443,9 +453,9 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
   double get loanPayment =>
       _monthlyPayment(loanAmount, annualLoanRate, loanTerm);
   int? get shortestAffordableLoanTerm {
-    if (finalMonthly <= 0 || loanTerm <= 1) return null;
+    if (activeMonthly <= 0 || loanTerm <= 1) return null;
     for (var term = 1; term < loanTerm; term++) {
-      if (_monthlyPayment(loanAmount, annualLoanRate, term) <= finalMonthly) {
+      if (_monthlyPayment(loanAmount, annualLoanRate, term) <= activeMonthly) {
         return term;
       }
     }
@@ -481,6 +491,7 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
   void _finishOptimization() {
     finalTotal = baselineTotal + totalReduction;
     finalMonthly = months > 0 ? finalTotal / months : 0;
+    selectedScenario = ResultScenario.optimized;
     step = WizStep.finalStep;
   }
 
@@ -579,6 +590,8 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
         return _optionalEdit();
       case WizStep.finalStep:
         return _result();
+      case WizStep.recommendations:
+        return _recommendations();
       case WizStep.financing:
         return _financing();
       case WizStep.creditCard:
@@ -775,9 +788,7 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
     ),
   );
 
-  Widget _expenseCategorySelector(ExpenseRow row) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
+  Widget _expenseCategorySelector(ExpenseRow row) =>
       DropdownButtonFormField<String>(
         initialValue: expenseCategories.contains(row.name.trim())
             ? row.name.trim()
@@ -795,14 +806,7 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
             row.nameCtrl.text = category;
           }
         }),
-      ),
-      const SizedBox(height: 8),
-      TextField(
-        controller: row.nameCtrl,
-        decoration: decoration('Название / вручную'),
-      ),
-    ],
-  );
+      );
 
   Widget rows(String title, List<ExpenseRow> list) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1128,68 +1132,113 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
     );
   }
 
-  Widget _result() => card(
-    'Итог',
-    'Расчёт накоплений с учётом выбранных изменений.',
+  Widget _result() {
+    final displayMonthly = selectedScenario == ResultScenario.optimized
+        ? finalMonthly
+        : baselineMonthly;
+    final displayTotal = selectedScenario == ResultScenario.optimized
+        ? finalTotal
+        : baselineTotal;
+    return card(
+      'Итог',
+      'Расчёт накоплений без учёта оптимизации. Сначала смотрим базовый сценарий.',
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          stat('Свободно в месяц', displayMonthly),
+          const SizedBox(height: 16),
+          stat('Экономия', totalReduction),
+          const SizedBox(height: 16),
+          stat('Накопится за ${months.toStringAsFixed(0)} мес.', displayTotal),
+          if (target > 0)
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Text(
+                displayTotal >= target
+                    ? 'Цель достигается'
+                    : 'Не хватает ${fmtNum(target - displayTotal)} ₽',
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+          const SizedBox(height: 20),
+          Wrap(
+            spacing: 12,
+            runSpacing: 8,
+            children: [
+              ElevatedButton(
+                onPressed: () => setState(() => step = WizStep.recommendations),
+                child: const Text('Показать рекомендации'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  selectedScenario = ResultScenario.initial;
+                  loanAmountCtrl.text = shortfall.toStringAsFixed(0);
+                  loanTermCtrl.clear();
+                  rateCtrl.clear();
+                  cardRateCtrl.clear();
+                  loanCalculated = false;
+                  cardCalculated = false;
+                  cardHas120DayGrace = null;
+                  setState(() => step = WizStep.financing);
+                },
+                child: const Text('Рассчитать варианты финансирования'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          OutlinedButton(onPressed: _reset, child: const Text('Начать заново')),
+        ],
+      ),
+    );
+  }
+
+  Widget _recommendations() => card(
+    'Рекомендации по оптимизации',
+    'Под какую ставку можно открыть вклад и какой кешбек можно получить по выбранным категориям.',
     Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        stat('Свободно в месяц', finalMonthly),
+        field(depositRateCtrl, 'Процент по вкладу, %'),
         const SizedBox(height: 16),
-        stat('Экономия', totalReduction),
-        const SizedBox(height: 16),
-        stat('Накопится за ${months.toStringAsFixed(0)} мес.', finalTotal),
         if (cashbackSavings > 0)
-          Padding(
-            padding: const EdgeInsets.only(top: 16),
-            child: Text(
-              'Оптимизация бюджета: оплачивайте Жилье, Питание, Транспорт и Здравоохранение картой с кешбеком 5% — можно вернуть ${fmtNum(cashbackSavings)} ₽.',
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
+          Text(
+            'Кешбек по выбранным категориям: ${fmtNum(cashbackSavings)} ₽',
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          )
+        else
+          const Text(
+            'Укажите категории расходов и суммы, чтобы увидеть кешбек.',
           ),
-        if (target > 0)
-          Padding(
-            padding: const EdgeInsets.only(top: 12),
-            child: Text(
-              finalTotal >= target
-                  ? 'Цель достигается'
-                  : 'Не хватает ${fmtNum(shortfall)} ₽',
-              style: const TextStyle(fontWeight: FontWeight.w600),
+        const SizedBox(height: 8),
+        Text(
+          'Вклад: при накоплении ${fmtNum(baselineMonthly)} ₽/мес. под ${depositRate.toStringAsFixed(1)}% годовых итог по вкладу к сроку составит ${fmtNum(depositProjection)} ₽.',
+          style: const TextStyle(height: 1.45),
+        ),
+        const SizedBox(height: 20),
+        Wrap(
+          spacing: 12,
+          runSpacing: 8,
+          children: [
+            OutlinedButton(
+              onPressed: () => setState(() {
+                selectedScenario = ResultScenario.initial;
+                step = WizStep.finalStep;
+              }),
+              child: const Text('Оставить как есть'),
             ),
-          ),
-        if (target > 0 && shortfall > 0)
-          Padding(
-            padding: const EdgeInsets.only(top: 20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (finalMonthly > 0)
-                  Text(
-                    'Перед кредитом можно открыть вклад: если откладывать ${fmtNum(finalMonthly)} ₽/мес. под ${depositRate.toStringAsFixed(1)}% годовых, то к концу срока на вкладе накопится около ${fmtNum(depositProjection)} ₽.',
-                    style: const TextStyle(height: 1.5),
-                  ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      loanAmountCtrl.text = shortfall.toStringAsFixed(0);
-                      loanTermCtrl.clear();
-                      rateCtrl.clear();
-                      cardRateCtrl.clear();
-                      loanCalculated = false;
-                      cardCalculated = false;
-                      cardHas120DayGrace = null;
-                      setState(() => step = WizStep.financing);
-                    },
-                    child: const Text('Рассчитать варианты финансирования'),
-                  ),
-                ),
-              ],
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  selectedScenario = ResultScenario.optimized;
+                  finalMonthly = baselineMonthly + totalReduction / months;
+                  finalTotal = baselineTotal + totalReduction;
+                  step = WizStep.finalStep;
+                });
+              },
+              child: const Text('Применить рекомендации'),
             ),
-          ),
-        const SizedBox(height: 24),
-        OutlinedButton(onPressed: _reset, child: const Text('Начать заново')),
+          ],
+        ),
       ],
     ),
   );
@@ -1198,15 +1247,33 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
     final cardRecommended = shortfall < cardThreshold;
     return card(
       'Как покрыть недостающую сумму?',
-      'Не хватает ${fmtNum(shortfall)} ₽. Порог для рекомендации карты: свободные накопления за 3 месяца (${fmtNum(cardThreshold)} ₽).',
+      'Сначала считаем базовый вариант. Если хотите, на следующем шаге можно выбрать оптимизированный итог.',
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (finalMonthly > 0)
+          DropdownButtonFormField<ResultScenario>(
+            initialValue: selectedScenario,
+            decoration: decoration('Какой итог считать'),
+            items: const [
+              DropdownMenuItem(
+                value: ResultScenario.initial,
+                child: Text('Базовый итог'),
+              ),
+              DropdownMenuItem(
+                value: ResultScenario.optimized,
+                child: Text('Оптимизированный итог'),
+              ),
+            ],
+            onChanged: (value) => setState(() {
+              selectedScenario = value ?? ResultScenario.initial;
+            }),
+          ),
+          const SizedBox(height: 16),
+          if (activeMonthly > 0)
             Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: Text(
-                'Перед кредитом можно открыть вклад: свободные накопления ${fmtNum(finalMonthly)} ₽/мес. под ${depositRate.toStringAsFixed(1)}% годовых могут дать ${fmtNum(depositProjection)} ₽ к сроку цели.',
+                'Перед кредитом можно открыть вклад: свободные накопления ${fmtNum(activeMonthly)} ₽/мес. под ${depositRate.toStringAsFixed(1)}% годовых могут дать ${fmtNum(depositProjection)} ₽ к сроку цели.',
                 style: const TextStyle(height: 1.45),
               ),
             ),
