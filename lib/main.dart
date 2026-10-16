@@ -312,7 +312,6 @@ class ExpenseRow {
 enum WizStep {
   goal,
   fixedExpenses,
-  periodicExpenses,
   optionalExpenses,
   baseline,
   optionalIntro,
@@ -361,6 +360,12 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
     'Образование',
   ];
 
+  static const optionalExpenseCategories = [
+    'Маркетплейсы',
+    'Театры',
+    'Кафе и рестораны',
+  ];
+
   static const cashbackCategories = [
     'Жилье',
     'Питание',
@@ -379,7 +384,6 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
   final rateCtrl = TextEditingController();
   final cardRateCtrl = TextEditingController();
   List<ExpenseRow> fixed = [ExpenseRow()];
-  List<ExpenseRow> mandatory = [ExpenseRow()];
   List<ExpenseRow> optional = [ExpenseRow()];
   final Map<ExpenseRow, double> reductions = {};
   int startMonth = DateTime.now().month;
@@ -387,6 +391,10 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
   int optionalIndex = 0;
   bool loanCalculated = false;
   bool cardCalculated = false;
+  bool depositCalculated = false;
+  double calculatedDepositInterest = 0;
+  ResultScenario? financingScenarioChoice;
+  bool financingResultShown = false;
   bool? cardHas120DayGrace;
   ResultScenario selectedScenario = ResultScenario.initial;
   double baselineMonthly = 0;
@@ -416,11 +424,11 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
       balance += activeMonthly;
       balance *= 1 + monthlyRate;
     }
-    return balance;
+    return balance - activeMonthly * months.ceil();
   }
 
   double get cashbackSavings {
-    final rows = <ExpenseRow>[...fixed, ...mandatory, ...optional];
+    final rows = <ExpenseRow>[...fixed, ...optional];
     final total = rows.fold(0.0, (sum, row) {
       final name = row.name.trim();
       if (!cashbackCategories.contains(name)) return sum;
@@ -469,7 +477,6 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
       rows.fold(0, (total, row) => total + row.amount);
 
   double get totalPeriodExpenses =>
-      mandatory.fold(0.0, (total, row) => total + row.periodTotal) +
       optional.fold(0.0, (total, row) => total + row.periodTotal);
 
   double get totalSavings =>
@@ -537,30 +544,6 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
     });
   }
 
-  void _saveReduction(double amount) {
-    final expenses = optionalWithAmounts;
-    final expense = expenses[optionalIndex];
-    if (amount < 0 || amount > expense.periodTotal) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Укажите сумму от 0 до ${fmtNum(expense.periodTotal)} ₽ за весь срок.',
-          ),
-        ),
-      );
-      return;
-    }
-    setState(() {
-      reductions[expense] = amount;
-      if (optionalIndex + 1 < expenses.length) {
-        optionalIndex++;
-        reductionCtrl.clear();
-      } else {
-        _finishOptimization();
-      }
-    });
-  }
-
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('Расчёт бюджета')),
@@ -578,8 +561,6 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
         return _goal();
       case WizStep.fixedExpenses:
         return _fixedExpenses();
-      case WizStep.periodicExpenses:
-        return _periodicExpenses();
       case WizStep.optionalExpenses:
         return _optionalExpenses();
       case WizStep.baseline:
@@ -721,32 +702,6 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
               child: const Text('Назад'),
             ),
             ElevatedButton(
-              onPressed: () => setState(() => step = WizStep.periodicExpenses),
-              child: const Text('Далее'),
-            ),
-          ],
-        ),
-      ],
-    ),
-  );
-
-  Widget _periodicExpenses() => card(
-    'Периодические расходы',
-    'Укажите суммы в тех месяцах, когда ожидаются расходы.',
-    Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        monthlyRows('Периодические расходы', mandatory),
-        const SizedBox(height: 20),
-        Wrap(
-          spacing: 12,
-          runSpacing: 8,
-          children: [
-            OutlinedButton(
-              onPressed: () => setState(() => step = WizStep.fixedExpenses),
-              child: const Text('Назад'),
-            ),
-            ElevatedButton(
               onPressed: () => setState(() => step = WizStep.optionalExpenses),
               child: const Text('Далее'),
             ),
@@ -769,7 +724,7 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
           runSpacing: 8,
           children: [
             OutlinedButton(
-              onPressed: () => setState(() => step = WizStep.periodicExpenses),
+              onPressed: () => setState(() => step = WizStep.fixedExpenses),
               child: const Text('Назад'),
             ),
             ElevatedButton(
@@ -788,24 +743,26 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
     ),
   );
 
-  Widget _expenseCategorySelector(ExpenseRow row) =>
-      DropdownButtonFormField<String>(
-        initialValue: expenseCategories.contains(row.name.trim())
-            ? row.name.trim()
-            : null,
-        isExpanded: true,
-        decoration: decoration('Категория'),
-        items: expenseCategories
-            .map(
-              (category) =>
-                  DropdownMenuItem(value: category, child: Text(category)),
-            )
-            .toList(),
-        onChanged: (category) => setState(() {
-          if (category != null) {
-            row.nameCtrl.text = category;
-          }
-        }),
+  Widget _expenseCategorySelector(ExpenseRow row, List<String> categories) =>
+      Autocomplete<String>(
+        key: ObjectKey(row),
+        initialValue: TextEditingValue(text: row.name),
+        optionsBuilder: (value) {
+          final query = value.text.trim().toLowerCase();
+          if (query.isEmpty) return categories;
+          return categories.where(
+            (category) => category.toLowerCase().contains(query),
+          );
+        },
+        onSelected: (category) => row.nameCtrl.text = category,
+        fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) =>
+            TextField(
+              controller: controller,
+              focusNode: focusNode,
+              decoration: decoration('Категория или свой расход'),
+              onChanged: (value) => row.nameCtrl.text = value,
+              onSubmitted: (_) => onFieldSubmitted(),
+            ),
       );
 
   Widget rows(String title, List<ExpenseRow> list) => Column(
@@ -816,7 +773,10 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
       ...list.map(
         (row) => Row(
           children: [
-            Expanded(flex: 2, child: _expenseCategorySelector(row)),
+            Expanded(
+              flex: 2,
+              child: _expenseCategorySelector(row, expenseCategories),
+            ),
             const SizedBox(width: 8),
             Expanded(
               child: TextField(
@@ -895,13 +855,13 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
                         cells: [
                           DataCell(
                             SizedBox(
-                              width: 190,
+                              width: 280,
                               child: Row(
                                 children: [
                                   Expanded(
-                                    child: TextField(
-                                      controller: row.nameCtrl,
-                                      decoration: decoration('Название'),
+                                    child: _expenseCategorySelector(
+                                      row,
+                                      optionalExpenseCategories,
                                     ),
                                   ),
                                   IconButton(
@@ -1179,6 +1139,8 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
                   loanCalculated = false;
                   cardCalculated = false;
                   cardHas120DayGrace = null;
+                  financingScenarioChoice = null;
+                  financingResultShown = false;
                   setState(() => step = WizStep.financing);
                 },
                 child: const Text('Рассчитать варианты финансирования'),
@@ -1198,7 +1160,27 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
     Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        field(depositRateCtrl, 'Процент по вкладу, %'),
+        field(
+          depositRateCtrl,
+          'Процент по вкладу, %',
+          onChanged: (_) => setState(() => depositCalculated = false),
+        ),
+        const SizedBox(height: 16),
+        OutlinedButton.icon(
+          onPressed: () => setState(() {
+            calculatedDepositInterest = depositProjection;
+            depositCalculated = true;
+          }),
+          icon: const Icon(Icons.calculate_outlined),
+          label: const Text('Рассчитать вклад'),
+        ),
+        if (depositCalculated) ...[
+          const SizedBox(height: 12),
+          Text(
+            'При ставке ${depositRate.toStringAsFixed(1)}% годовых начислится ${fmtNum(calculatedDepositInterest)} ₽ процентов.',
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+        ],
         const SizedBox(height: 16),
         if (cashbackSavings > 0)
           Text(
@@ -1210,9 +1192,9 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
             'Укажите категории расходов и суммы, чтобы увидеть кешбек.',
           ),
         const SizedBox(height: 8),
-        Text(
-          'Вклад: при накоплении ${fmtNum(baselineMonthly)} ₽/мес. под ${depositRate.toStringAsFixed(1)}% годовых итог по вкладу к сроку составит ${fmtNum(depositProjection)} ₽.',
-          style: const TextStyle(height: 1.45),
+        const Text(
+          'Согласны следовать рекомендациям по оптимизации расходов?',
+          style: TextStyle(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 20),
         Wrap(
@@ -1224,18 +1206,22 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
                 selectedScenario = ResultScenario.initial;
                 step = WizStep.finalStep;
               }),
-              child: const Text('Оставить как есть'),
+              child: const Text('Нет, оставить базовый вариант'),
             ),
             ElevatedButton(
               onPressed: () {
                 setState(() {
                   selectedScenario = ResultScenario.optimized;
-                  finalMonthly = baselineMonthly + totalReduction / months;
-                  finalTotal = baselineTotal + totalReduction;
+                  finalTotal =
+                      baselineTotal +
+                      totalReduction +
+                      cashbackSavings +
+                      (depositCalculated ? calculatedDepositInterest : 0);
+                  finalMonthly = months > 0 ? finalTotal / months : 0;
                   step = WizStep.finalStep;
                 });
               },
-              child: const Text('Применить рекомендации'),
+              child: const Text('Да, применить рекомендации'),
             ),
           ],
         ),
@@ -1252,8 +1238,9 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           DropdownButtonFormField<ResultScenario>(
-            initialValue: selectedScenario,
+            initialValue: financingScenarioChoice,
             decoration: decoration('Какой итог считать'),
+            hint: const Text('Выберите сценарий'),
             items: const [
               DropdownMenuItem(
                 value: ResultScenario.initial,
@@ -1265,24 +1252,48 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
               ),
             ],
             onChanged: (value) => setState(() {
-              selectedScenario = value ?? ResultScenario.initial;
+              financingScenarioChoice = value;
+              financingResultShown = false;
             }),
           ),
-          const SizedBox(height: 16),
-          if (activeMonthly > 0)
+          const SizedBox(height: 12),
+          ElevatedButton(
+            onPressed: financingScenarioChoice == null
+                ? null
+                : () => setState(() {
+                    selectedScenario = financingScenarioChoice!;
+                    financingResultShown = true;
+                    loanAmountCtrl.text = shortfall.toStringAsFixed(0);
+                    loanCalculated = false;
+                    cardCalculated = false;
+                    cardHas120DayGrace = null;
+                  }),
+            child: const Text('Показать итог'),
+          ),
+          if (financingResultShown) ...[
+            const SizedBox(height: 16),
+            Text(
+              selectedScenario == ResultScenario.initial
+                  ? 'Базовый итог: ${fmtNum(activeMonthly)} ₽ в месяц, ${fmtNum(activeTotal)} ₽ за срок.'
+                  : 'Оптимизированный итог: ${fmtNum(activeMonthly)} ₽ в месяц, ${fmtNum(activeTotal)} ₽ за срок.',
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ],
+          if (financingResultShown && activeMonthly > 0)
             Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: Text(
-                'Перед кредитом можно открыть вклад: свободные накопления ${fmtNum(activeMonthly)} ₽/мес. под ${depositRate.toStringAsFixed(1)}% годовых могут дать ${fmtNum(depositProjection)} ₽ к сроку цели.',
+                'Перед кредитом можно открыть вклад: при накоплении ${fmtNum(activeMonthly)} ₽/мес. под ${depositRate.toStringAsFixed(1)}% годовых начислится ${fmtNum(depositProjection)} ₽ процентов.',
                 style: const TextStyle(height: 1.45),
               ),
             ),
-          Text(
-            cardRecommended
-                ? 'Рекомендуем кредитную карту: сумма небольшая относительно ваших свободных накоплений. Если погасить долг в льготный период, можно не переплачивать проценты.'
-                : 'Недостающая сумма больше трёх месяцев свободных накоплений. Рассмотрите кредит и сравните переплату с условиями кредитной карты.',
-            style: const TextStyle(height: 1.45),
-          ),
+          if (financingResultShown)
+            Text(
+              cardRecommended
+                  ? 'Рекомендуем кредитную карту: сумма небольшая относительно ваших свободных накоплений. Если погасить долг в льготный период, можно не переплачивать проценты.'
+                  : 'Недостающая сумма больше трёх месяцев свободных накоплений. Рассмотрите кредит и сравните переплату с условиями кредитной карты.',
+              style: const TextStyle(height: 1.45),
+            ),
           const SizedBox(height: 20),
           Wrap(
             spacing: 12,
@@ -1292,24 +1303,26 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
                 onPressed: () => setState(() => step = WizStep.finalStep),
                 child: const Text('Назад'),
               ),
-              OutlinedButton(
-                onPressed: () => setState(() {
-                  cardRateCtrl.clear();
-                  cardHas120DayGrace = null;
-                  cardCalculated = false;
-                  step = WizStep.creditCard;
-                }),
-                child: const Text('Кредитная карта'),
-              ),
-              ElevatedButton(
-                onPressed: () => setState(() {
-                  rateCtrl.clear();
-                  loanTermCtrl.clear();
-                  loanCalculated = false;
-                  step = WizStep.loan;
-                }),
-                child: const Text('Рассчитать кредит'),
-              ),
+              if (financingResultShown) ...[
+                OutlinedButton(
+                  onPressed: () => setState(() {
+                    cardRateCtrl.clear();
+                    cardHas120DayGrace = null;
+                    cardCalculated = false;
+                    step = WizStep.creditCard;
+                  }),
+                  child: const Text('Кредитная карта'),
+                ),
+                ElevatedButton(
+                  onPressed: () => setState(() {
+                    rateCtrl.clear();
+                    loanTermCtrl.clear();
+                    loanCalculated = false;
+                    step = WizStep.loan;
+                  }),
+                  child: const Text('Рассчитать кредит'),
+                ),
+              ],
             ],
           ),
         ],
@@ -1356,7 +1369,7 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
             stat('Оценка процентов за $cardRepaymentDays дней', interest),
             const SizedBox(height: 8),
             Text(
-              'Оценка срока рассчитана по свободным накоплениям ${fmtNum(finalMonthly)} ₽ в месяц. При льготном периоде первые 3 месяца накоплений уменьшают долг без начисления процентов; далее проценты считаются за фактическое число дней по ставке ${cardRate.toStringAsFixed(2)}% годовых и календарному году 365/366 дней. Общая сумма к возврату: ${fmtNum(cardTotalRepayment)} ₽.',
+              'Оценка срока рассчитана по свободным накоплениям ${fmtNum(activeMonthly)} ₽ в месяц. При льготном периоде первые 3 месяца накоплений уменьшают долг без начисления процентов; далее проценты считаются за фактическое число дней по ставке ${cardRate.toStringAsFixed(2)}% годовых и календарному году 365/366 дней. Общая сумма к возврату: ${fmtNum(cardTotalRepayment)} ₽.',
               style: const TextStyle(fontSize: 13, color: Colors.black54),
             ),
           ],
@@ -1495,7 +1508,6 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
     cardCalculated = false;
     cardHas120DayGrace = null;
     fixed = [ExpenseRow()];
-    mandatory = [ExpenseRow()];
     optional = [ExpenseRow()];
     reductions.clear();
   });
