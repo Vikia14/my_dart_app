@@ -1,8 +1,72 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:yandex_mobileads/mobile_ads.dart';
 
-void main() => runApp(const FinConsultantApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await YandexAds.initialize();
+  } catch (_) {}
+  runApp(const FinConsultantApp());
+  unawaited(_yandexInterstitialAds.load());
+}
+
+final _yandexInterstitialAds = _YandexInterstitialAds();
+
+class _YandexInterstitialAds {
+  static const _adUnitId = 'demo-interstitial-yandex';
+
+  InterstitialAdLoader? _loader;
+  InterstitialAd? _ad;
+  bool _isLoading = false;
+
+  Future<void> load() async {
+    if (_isLoading || _ad != null) return;
+    _isLoading = true;
+    try {
+      _loader ??= InterstitialAdLoader();
+      _ad = await _loader!.loadAd(
+        adRequest: const AdRequest(adUnitId: _adUnitId),
+      );
+    } catch (_) {
+      _ad = null;
+    } finally {
+      _isLoading = false;
+    }
+  }
+
+  Future<void> showIfReady() async {
+    final ad = _ad;
+    if (ad == null) {
+      unawaited(load());
+      return;
+    }
+
+    _ad = null;
+    var disposed = false;
+    Future<void> disposeAndReload() async {
+      if (disposed) return;
+      disposed = true;
+      await ad.destroy();
+      unawaited(load());
+    }
+
+    try {
+      await ad.setAdEventListener(
+        eventListener: InterstitialAdEventListener(
+          onAdDismissed: () => unawaited(disposeAndReload()),
+          onAdFailedToShow: (_) => unawaited(disposeAndReload()),
+        ),
+      );
+      await ad.show();
+      await ad.waitForDismiss();
+    } catch (_) {
+      await disposeAndReload();
+    }
+  }
+}
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -159,6 +223,45 @@ double calculateCardInterest(
     date = DateTime(date.year, date.month, date.day + daysInSegment);
   }
   return interest;
+}
+
+enum LoanPaymentType { annuity, differentiated }
+
+double calculateLoanPayment(
+  double principal,
+  double annualRate,
+  int term,
+  LoanPaymentType type,
+) {
+  if (principal <= 0 || annualRate < 0 || term <= 0) return 0;
+  final monthlyRate = annualRate / 1200;
+  if (type == LoanPaymentType.differentiated) {
+    return principal / term + principal * monthlyRate;
+  }
+  if (monthlyRate == 0) return principal / term;
+  return principal *
+      monthlyRate /
+      (1 - math.pow(1 + monthlyRate, -term).toDouble());
+}
+
+double calculateLoanOverpayment(
+  double principal,
+  double annualRate,
+  int term,
+  LoanPaymentType type,
+) {
+  if (principal <= 0 || annualRate < 0 || term <= 0) return 0;
+  if (type == LoanPaymentType.differentiated) {
+    return principal * (annualRate / 1200) * (term + 1) / 2;
+  }
+  return calculateLoanPayment(
+            principal,
+            annualRate,
+            term,
+            LoanPaymentType.annuity,
+          ) *
+          term -
+      principal;
 }
 
 final appTheme = ThemeData(
@@ -390,6 +493,7 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
   int startYear = DateTime.now().year;
   int optionalIndex = 0;
   bool loanCalculated = false;
+  LoanPaymentType loanPaymentType = LoanPaymentType.annuity;
   bool cardCalculated = false;
   bool depositCalculated = false;
   double calculatedDepositInterest = 0;
@@ -458,12 +562,28 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
   double get annualLoanRate =>
       double.tryParse(rateCtrl.text.replaceAll(',', '.')) ?? 0;
   int get savingMonths => months.ceil();
-  double get loanPayment =>
-      _monthlyPayment(loanAmount, annualLoanRate, loanTerm);
+  double get loanPayment => calculateLoanPayment(
+    loanAmount,
+    annualLoanRate,
+    loanTerm,
+    loanPaymentType,
+  );
+  double get loanOverpayment => calculateLoanOverpayment(
+    loanAmount,
+    annualLoanRate,
+    loanTerm,
+    loanPaymentType,
+  );
   int? get shortestAffordableLoanTerm {
     if (activeMonthly <= 0 || loanTerm <= 1) return null;
     for (var term = 1; term < loanTerm; term++) {
-      if (_monthlyPayment(loanAmount, annualLoanRate, term) <= activeMonthly) {
+      if (calculateLoanPayment(
+            loanAmount,
+            annualLoanRate,
+            term,
+            loanPaymentType,
+          ) <=
+          activeMonthly) {
         return term;
       }
     }
@@ -485,15 +605,6 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
       totalPeriodExpenses;
 
   double monthly() => months > 0 ? totalSavings / months : 0;
-
-  double _monthlyPayment(double principal, double annualRate, int term) {
-    if (principal <= 0 || annualRate < 0 || term <= 0) return 0;
-    final monthlyRate = annualRate / 1200;
-    if (monthlyRate == 0) return principal / term;
-    return principal *
-        monthlyRate /
-        (1 - math.pow(1 + monthlyRate, -term).toDouble());
-  }
 
   void _finishOptimization() {
     finalTotal = baselineTotal + totalReduction;
@@ -729,11 +840,31 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
             ),
             ElevatedButton(
               onPressed: () {
+                final names = <String>{};
+                for (final row in optional) {
+                  final name = row.name.trim().toLowerCase();
+                  if (name.isNotEmpty && !names.add(name)) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Один и тот же расход нельзя указать дважды.',
+                        ),
+                      ),
+                    );
+                    return;
+                  }
+                }
                 baselineMonthly = monthly();
                 baselineTotal = totalSavings;
                 finalMonthly = baselineMonthly;
                 finalTotal = baselineTotal;
-                setState(() => step = WizStep.baseline);
+                setState(() {
+                  step = WizStep.baseline;
+                  if (optionalWithAmounts.isEmpty) {
+                    selectedScenario = ResultScenario.initial;
+                    step = WizStep.finalStep;
+                  }
+                });
               },
               child: const Text('Рассчитать'),
             ),
@@ -743,27 +874,36 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
     ),
   );
 
-  Widget _expenseCategorySelector(ExpenseRow row, List<String> categories) =>
-      Autocomplete<String>(
-        key: ObjectKey(row),
-        initialValue: TextEditingValue(text: row.name),
-        optionsBuilder: (value) {
-          final query = value.text.trim().toLowerCase();
-          if (query.isEmpty) return categories;
-          return categories.where(
-            (category) => category.toLowerCase().contains(query),
-          );
-        },
-        onSelected: (category) => row.nameCtrl.text = category,
-        fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) =>
-            TextField(
-              controller: controller,
-              focusNode: focusNode,
-              decoration: decoration('Категория или свой расход'),
-              onChanged: (value) => row.nameCtrl.text = value,
-              onSubmitted: (_) => onFieldSubmitted(),
-            ),
-      );
+  Widget _expenseCategorySelector(
+    ExpenseRow row,
+    List<String> categories, {
+    List<ExpenseRow> siblingRows = const [],
+  }) => Autocomplete<String>(
+    key: ObjectKey(row),
+    initialValue: TextEditingValue(text: row.name),
+    optionsBuilder: (value) {
+      final query = value.text.trim().toLowerCase();
+      final existingNames = siblingRows
+          .where((other) => !identical(other, row))
+          .map((other) => other.name.trim().toLowerCase())
+          .where((name) => name.isNotEmpty)
+          .toSet();
+      return categories.where((category) {
+        final normalized = category.toLowerCase();
+        return normalized.contains(query) &&
+            !existingNames.contains(normalized);
+      });
+    },
+    onSelected: (category) => row.nameCtrl.text = category,
+    fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) =>
+        TextField(
+          controller: controller,
+          focusNode: focusNode,
+          decoration: decoration('Категория или свой расход'),
+          onChanged: (value) => row.nameCtrl.text = value,
+          onSubmitted: (_) => onFieldSubmitted(),
+        ),
+  );
 
   Widget rows(String title, List<ExpenseRow> list) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -859,39 +999,52 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
                               child: Row(
                                 children: [
                                   Expanded(
-                                    child: _expenseCategorySelector(
-                                      row,
-                                      optionalExpenseCategories,
-                                    ),
+                                    child: firstMonthIndex == 0
+                                        ? _expenseCategorySelector(
+                                            row,
+                                            optionalExpenseCategories,
+                                            siblingRows: list,
+                                          )
+                                        : Text(
+                                            row.name.trim().isEmpty
+                                                ? 'Расход'
+                                                : row.name,
+                                          ),
                                   ),
-                                  IconButton(
-                                    tooltip: 'Растянуть сумму на все месяцы',
-                                    onPressed: () => setState(() {
-                                      final source = row.monthCtrls
-                                          .map((controller) => controller.text)
-                                          .firstWhere(
-                                            (value) => value.trim().isNotEmpty,
-                                            orElse: () => '',
-                                          );
-                                      if (source.isNotEmpty) {
-                                        for (final controller
-                                            in row.monthCtrls) {
-                                          controller.text = source;
+                                  if (firstMonthIndex == 0) ...[
+                                    IconButton(
+                                      tooltip: 'Растянуть сумму на все месяцы',
+                                      onPressed: () => setState(() {
+                                        final source = row.monthCtrls
+                                            .map(
+                                              (controller) => controller.text,
+                                            )
+                                            .firstWhere(
+                                              (value) =>
+                                                  value.trim().isNotEmpty,
+                                              orElse: () => '',
+                                            );
+                                        if (source.isNotEmpty) {
+                                          for (final controller
+                                              in row.monthCtrls) {
+                                            controller.text = source;
+                                          }
                                         }
-                                      }
-                                    }),
-                                    icon: const Icon(
-                                      Icons.keyboard_double_arrow_right,
+                                      }),
+                                      icon: const Icon(
+                                        Icons.keyboard_double_arrow_right,
+                                      ),
                                     ),
-                                  ),
-                                  IconButton(
-                                    tooltip: 'Удалить расход',
-                                    onPressed: () => setState(() {
-                                      list.remove(row);
-                                      if (list.isEmpty) list.add(ExpenseRow());
-                                    }),
-                                    icon: const Icon(Icons.close),
-                                  ),
+                                    IconButton(
+                                      tooltip: 'Удалить расход',
+                                      onPressed: () => setState(() {
+                                        list.remove(row);
+                                        if (list.isEmpty)
+                                          list.add(ExpenseRow());
+                                      }),
+                                      icon: const Icon(Icons.close),
+                                    ),
+                                  ],
                                 ],
                               ),
                             ),
@@ -966,7 +1119,16 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
               child: const Text('Назад'),
             ),
             ElevatedButton(
-              onPressed: () => setState(() => step = WizStep.optionalIntro),
+              onPressed: () => setState(() {
+                if (optionalWithAmounts.isEmpty) {
+                  finalMonthly = baselineMonthly;
+                  finalTotal = baselineTotal;
+                  selectedScenario = ResultScenario.initial;
+                  step = WizStep.finalStep;
+                } else {
+                  step = WizStep.optionalIntro;
+                }
+              }),
               child: const Text('Далее'),
             ),
           ],
@@ -1382,7 +1544,10 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
                 onPressed: () => setState(() => step = WizStep.financing),
                 child: const Text('Назад'),
               ),
-              OutlinedButton(onPressed: _reset, child: const Text('В начало')),
+              OutlinedButton(
+                onPressed: _resetWithAd,
+                child: const Text('В начало'),
+              ),
               ElevatedButton(
                 onPressed: () {
                   if (cardRateCtrl.text.isEmpty ||
@@ -1411,7 +1576,7 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
   Widget _loan() {
     final term = loanTerm;
     final payment = loanPayment;
-    final overpayment = payment * term - loanAmount;
+    final overpayment = loanOverpayment;
     final shorterTerm = loanCalculated ? shortestAffordableLoanTerm : null;
     return card(
       'Расчёт кредита',
@@ -1436,9 +1601,32 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
             'Срок кредита, месяцев',
             onChanged: (_) => setState(() => loanCalculated = false),
           ),
+          const SizedBox(height: 12),
+          DropdownButtonFormField<LoanPaymentType>(
+            initialValue: loanPaymentType,
+            decoration: decoration('Вид платежа'),
+            items: const [
+              DropdownMenuItem(
+                value: LoanPaymentType.annuity,
+                child: Text('Аннуитетные платежи'),
+              ),
+              DropdownMenuItem(
+                value: LoanPaymentType.differentiated,
+                child: Text('Дифференцированные платежи'),
+              ),
+            ],
+            onChanged: (value) => setState(() {
+              loanPaymentType = value ?? LoanPaymentType.annuity;
+            }),
+          ),
           const SizedBox(height: 20),
           if (loanCalculated) ...[
-            stat('Ежемесячный платёж', payment),
+            stat(
+              loanPaymentType == LoanPaymentType.annuity
+                  ? 'Ежемесячный платёж'
+                  : 'Первый ежемесячный платёж',
+              payment,
+            ),
             const SizedBox(height: 16),
             stat('Переплата по процентам', overpayment),
             if (payment < finalMonthly && shorterTerm != null) ...[
@@ -1466,7 +1654,10 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
                 onPressed: () => setState(() => step = WizStep.financing),
                 child: const Text('Назад'),
               ),
-              OutlinedButton(onPressed: _reset, child: const Text('В начало')),
+              OutlinedButton(
+                onPressed: _resetWithAd,
+                child: const Text('В начало'),
+              ),
               ElevatedButton(
                 onPressed: () {
                   if (loanAmount <= 0 ||
@@ -1494,6 +1685,14 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
     );
   }
 
+  Future<void> _resetWithAd() async {
+    try {
+      await _yandexInterstitialAds.showIfReady();
+    } finally {
+      if (mounted) _reset();
+    }
+  }
+
   void _reset() => setState(() {
     step = WizStep.goal;
     monthsCtrl.clear();
@@ -1505,6 +1704,7 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
     rateCtrl.clear();
     cardRateCtrl.clear();
     loanCalculated = false;
+    loanPaymentType = LoanPaymentType.annuity;
     cardCalculated = false;
     cardHas120DayGrace = null;
     fixed = [ExpenseRow()];

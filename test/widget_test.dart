@@ -14,6 +14,99 @@ void main() {
     );
   });
 
+  test('calculates annuity and differentiated loan payments', () {
+    final annuityPayment = calculateLoanPayment(
+      120000,
+      12,
+      12,
+      LoanPaymentType.annuity,
+    );
+    final differentiatedPayment = calculateLoanPayment(
+      120000,
+      12,
+      12,
+      LoanPaymentType.differentiated,
+    );
+
+    expect(differentiatedPayment, closeTo(11200, 0.01));
+    expect(
+      calculateLoanOverpayment(120000, 12, 12, LoanPaymentType.differentiated),
+      closeTo(7800, 0.01),
+    );
+    expect(
+      calculateLoanOverpayment(120000, 12, 12, LoanPaymentType.differentiated),
+      lessThan(
+        calculateLoanOverpayment(120000, 12, 12, LoanPaymentType.annuity),
+      ),
+    );
+    expect(annuityPayment, lessThan(differentiatedPayment));
+  });
+
+  testWidgets('prevents duplicate optional expenses and skips empty ones', (
+    tester,
+  ) async {
+    Future<void> openOptionalExpenses() async {
+      await tester.pumpWidget(const FinConsultantApp());
+      await tester.tap(find.text('Расчёт бюджета'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).at(0), '12');
+      await tester.enterText(find.byType(TextField).at(2), '100000');
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Далее'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Далее'));
+      await tester.pumpAndSettle();
+    }
+
+    await openOptionalExpenses();
+    await tester.tap(find.text('Добавить расход'));
+    await tester.pumpAndSettle();
+    final categoryFields = find.byWidgetPredicate(
+      (widget) =>
+          widget is TextField &&
+          widget.decoration?.labelText == 'Категория или свой расход',
+    );
+    await tester.enterText(categoryFields.at(0), 'Уход за питомцем');
+    await tester.enterText(categoryFields.at(1), ' уход за питомцем ');
+    await tester.ensureVisible(find.text('Рассчитать'));
+    await tester.tap(find.text('Рассчитать'));
+    await tester.pumpAndSettle();
+    expect(
+      find.text('Один и тот же расход нельзя указать дважды.'),
+      findsOneWidget,
+    );
+
+    await tester.ensureVisible(find.byTooltip('Удалить расход').last);
+    await tester.tap(find.byTooltip('Удалить расход').last);
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Рассчитать'));
+    await tester.tap(find.text('Рассчитать'));
+    await tester.pumpAndSettle();
+    expect(find.text('Изменить расходы'), findsNothing);
+  });
+
+  testWidgets('shows one optional expense in each year of the budget', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const FinConsultantApp());
+    await tester.tap(find.text('Расчёт бюджета'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).at(0), '13');
+    await tester.enterText(find.byType(TextField).at(2), '100000');
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Далее'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Далее'));
+    await tester.pumpAndSettle();
+
+    final categoryField = find.byWidgetPredicate(
+      (widget) =>
+          widget is TextField &&
+          widget.decoration?.labelText == 'Категория или свой расход',
+    );
+    await tester.enterText(categoryField, 'Кофе');
+    await tester.enterText(find.byType(TextField).at(1), '2000');
+    expect(find.text('Кофе'), findsOneWidget);
+  });
+
   testWidgets(
     'allows custom monthly expense categories and calculates deposit on demand',
     (tester) async {
@@ -190,6 +283,15 @@ void main() {
 
       expect(find.text('Ежемесячный платёж'), findsOneWidget);
       expect(find.text('Переплата по процентам'), findsOneWidget);
+
+      await tester.ensureVisible(find.text('В начало'));
+      await tester.tap(find.text('В начало'));
+      await tester.pumpAndSettle();
+      expect(find.text('Рассчитать кредит'), findsNothing);
+      expect(
+        tester.widget<TextField>(find.byType(TextField).first).controller!.text,
+        isEmpty,
+      );
     },
   );
 }
