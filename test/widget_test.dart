@@ -283,6 +283,11 @@ void main() {
 
       expect(find.text('Ежемесячный платёж'), findsOneWidget);
       expect(find.text('Переплата по процентам'), findsOneWidget);
+      expect(
+        find.textContaining('Платёж меньше свободных накоплений'),
+        findsOneWidget,
+      );
+      expect(find.text('Сократить срок до 11 мес.'), findsOneWidget);
 
       await tester.ensureVisible(find.text('В начало'));
       await tester.tap(find.text('В начало'));

@@ -1629,10 +1629,10 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
             ),
             const SizedBox(height: 16),
             stat('Переплата по процентам', overpayment),
-            if (payment < finalMonthly && shorterTerm != null) ...[
+            if (payment < activeMonthly && shorterTerm != null) ...[
               const SizedBox(height: 16),
               Text(
-                'Платёж меньше свободных накоплений (${fmtNum(finalMonthly)} ₽/мес.). Срок можно сократить до $shorterTerm мес.${shorterTerm > 1 ? '; ещё на месяц короче платёж превысит доступную сумму' : '. Это минимальный срок кредита'}.',
+                'Платёж меньше свободных накоплений (${fmtNum(activeMonthly)} ₽/мес.). Срок можно сократить до $shorterTerm мес.${shorterTerm > 1 ? '; ещё на месяц короче платёж превысит доступную сумму' : '. Это минимальный срок кредита'}.',
                 style: const TextStyle(height: 1.4),
               ),
               const SizedBox(height: 12),
