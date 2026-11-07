@@ -1,155 +1,32 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:fin_assistant/budget_goals.dart';
 import 'package:flutter/material.dart';
-import 'package:yandex_mobileads/mobile_ads.dart';
 
-Future<void> main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  try {
-    await YandexAds.initialize();
-  } catch (_) {}
   runApp(const FinConsultantApp());
-  unawaited(_yandexInterstitialAds.load());
 }
 
-final _yandexInterstitialAds = _YandexInterstitialAds();
+// ============================================================================
+// Тема приложения (фирменный дизайн)
+// ============================================================================
 
-class _YandexInterstitialAds {
-  static const _adUnitId = 'demo-interstitial-yandex';
+const Color kPrimaryColor = Color(0xFF4F46E5);
+const Color kPrimaryDark = Color(0xFF4338CA);
+const Color kSecondaryColor = Color(0xFF10B981);
+const Color kSurfaceColor = Color(0xFFFFFFFF);
+const Color kBackgroundColor = Color(0xFFF8FAFC);
+const Color kErrorColor = Color(0xFFF43F5E);
+const Color kSuccessColor = Color(0xFF10B981);
+const Color kTextPrimary = Color(0xFF0F172A);
+const Color kTextSecondary = Color(0xFF64748B);
+const Color kTextMuted = Color(0xFF94A3B8);
+const Color kBorderColor = Color(0xFFE2E8F0);
+const Color kDividerColor = Color(0xFFE2E8F0);
 
-  InterstitialAdLoader? _loader;
-  InterstitialAd? _ad;
-  bool _isLoading = false;
-
-  Future<void> load() async {
-    if (_isLoading || _ad != null) return;
-    _isLoading = true;
-    try {
-      _loader ??= InterstitialAdLoader();
-      _ad = await _loader!.loadAd(
-        adRequest: const AdRequest(adUnitId: _adUnitId),
-      );
-    } catch (_) {
-      _ad = null;
-    } finally {
-      _isLoading = false;
-    }
-  }
-
-  Future<void> showIfReady() async {
-    final ad = _ad;
-    if (ad == null) {
-      unawaited(load());
-      return;
-    }
-
-    _ad = null;
-    var disposed = false;
-    Future<void> disposeAndReload() async {
-      if (disposed) return;
-      disposed = true;
-      await ad.destroy();
-      unawaited(load());
-    }
-
-    try {
-      await ad.setAdEventListener(
-        eventListener: InterstitialAdEventListener(
-          onAdDismissed: () => unawaited(disposeAndReload()),
-          onAdFailedToShow: (_) => unawaited(disposeAndReload()),
-        ),
-      );
-      await ad.show();
-      await ad.waitForDismiss();
-    } catch (_) {
-      await disposeAndReload();
-    }
-  }
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  // This widget is the root of your application.
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can beflutter config --android-sdk "C:\SDK"
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
-    );
-  }
-}
-
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
+ThemeData _buildTheme() {
         // Center is a layout widget. It takes a single child and positions it
         // in the middle of the parent.
         child: Column(
@@ -181,6 +58,127 @@ class _MyHomePageState extends State<MyHomePage> {
         tooltip: 'Increment',
         child: const Icon(Icons.add),
       ),
+    );
+  }
+}
+
+  final ColorScheme colorScheme = ColorScheme(
+    brightness: Brightness.light,
+    primary: kPrimaryColor,
+    onPrimary: Colors.white,
+    primaryContainer: kPrimaryColor.withValues(alpha: 0.1),
+    onPrimaryContainer: kPrimaryDark,
+    secondary: kSecondaryColor,
+    onSecondary: Colors.white,
+    secondaryContainer: kSecondaryColor.withValues(alpha: 0.1),
+    onSecondaryContainer: Color(0xFF047857),
+    surface: kSurfaceColor,
+    onSurface: kTextPrimary,
+    surfaceVariant: kBackgroundColor,
+    onSurfaceVariant: kTextSecondary,
+    background: kBackgroundColor,
+    onBackground: kTextPrimary,
+    error: kErrorColor,
+    onError: Colors.white,
+    errorContainer: kErrorColor.withValues(alpha: 0.1),
+    onErrorContainer: Color(0xFFBE123C),
+    inverseSurface: kTextPrimary,
+    onInverseSurface: Colors.white,
+    inversePrimary: kPrimaryColor,
+  );
+
+  return ThemeData(
+    useMaterial3: true,
+    colorScheme: colorScheme,
+    scaffoldBackgroundColor: kBackgroundColor,
+    appBarTheme: AppBarTheme(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      centerTitle: false,
+      scrolledUnderElevation: 0,
+      iconTheme: const IconThemeData(color: kTextPrimary),
+      titleTextStyle: const TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.w700,
+        color: kTextPrimary,
+      ),
+    ),
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: kPrimaryColor,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        shadowColor: Colors.transparent,
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        textStyle: const TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        foregroundColor: kPrimaryColor,
+        side: const BorderSide(color: kPrimaryColor, width: 1.5),
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        textStyle: const TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: kSurfaceColor,
+      contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: kBorderColor, width: 1),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: kBorderColor, width: 1),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: kPrimaryColor, width: 2),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: kErrorColor, width: 1),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: kErrorColor, width: 2),
+      ),
+      labelStyle: const TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+        color: kTextSecondary,
+      ),
+      hintStyle: const TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+        color: kTextMuted,
+      ),
+    ),
+  );
+}
+
+class FinConsultantApp extends StatelessWidget {
+  final BudgetGoalsRepository repository;
+
+  const FinConsultantApp({super.key, this.repository});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'ФинКонсультант',
+      debugShowCheckedModeBanner: false,
+      theme: _buildTheme(),
+      home: MainMenuScreen(repository: repository ?? SecureBudgetGoalsRepository()),
     );
   }
 }
@@ -264,111 +262,583 @@ double calculateLoanOverpayment(
       principal;
 }
 
-final appTheme = ThemeData(
-  useMaterial3: true,
-  colorScheme: ColorScheme.fromSeed(
-    seedColor: const Color(0xFF1E2A38),
-    primary: const Color(0xFF1E2A38),
-    secondary: const Color(0xFF3F6B4B),
-  ),
-  scaffoldBackgroundColor: const Color(0xFFF1EEE2),
-  fontFamily: 'Roboto',
-  elevatedButtonTheme: ElevatedButtonThemeData(
-    style: ElevatedButton.styleFrom(
-      backgroundColor: const Color(0xFF1E2A38),
-      foregroundColor: Colors.white,
-    ),
-  ),
-);
+class MainMenuScreen extends StatelessWidget {
+  const MainMenuScreen({super.key, this.repository});
 
-class FinConsultantApp extends StatelessWidget {
-  const FinConsultantApp({super.key});
-  @override
-  Widget build(BuildContext context) => MaterialApp(
-    title: 'Личный финКонсультант',
-    theme: appTheme,
-    home: const HomeScreen(),
-    debugShowCheckedModeBanner: false,
-  );
-}
+  final BudgetGoalsRepository? repository;
 
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
-  @override
-  Widget build(BuildContext context) => Scaffold(
-    body: SafeArea(
+  Widget _menuCard({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color color,
+    required VoidCallback onTap,
+  }) => Card(
+    key: ValueKey('menu-$title'),
+    margin: const EdgeInsets.only(bottom: 16),
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
       child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
+        padding: const EdgeInsets.all(20),
+        child: Row(
           children: [
-            const Text(
-              'Личный финКонсультант',
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700),
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(icon, color: color, size: 28),
             ),
-            const SizedBox(height: 8),
-            const Text(
-              'Выберите, с чем хотите поработать',
-              style: TextStyle(fontSize: 14, color: Colors.black54),
-            ),
-            const SizedBox(height: 32),
-            _SectionCard(
-              'Расчёт бюджета',
-              'Считаем, сколько вы накопите к сроку, и что изменится, если скорректировать необязательные траты.',
-              () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const BudgetFlowScreen()),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: kTextPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: kTextSecondary,
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 16),
-            _SectionCard(
-              'Ассистент',
-              'Раздел в разработке.',
-              () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const AssistantScreen()),
-              ),
-            ),
+            Icon(Icons.chevron_right, color: kTextMuted),
           ],
         ),
       ),
     ),
   );
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    body: SafeArea(
+      child: CustomScrollView(
+        slivers: [
+          SliverPadding(
+            padding: const EdgeInsets.all(20),
+            sliver: SliverToBoxAdapter(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 8),
+                  Text(
+                    'ФинКонсультант',
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: kTextPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Планируйте бюджет, считайте накопления и управляйте долгами',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: kTextSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                ],
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: _menuCard(
+                context: context,
+                icon: Icons.account_balance_wallet_outlined,
+                title: 'Расчёт бюджета',
+                subtitle:
+                    'Накопления, доходы, расходы, кредиты и карты в одном расчёте',
+                color: kPrimaryColor,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (_) => HomeScreen(repository: repository),
+                  ),
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: _menuCard(
+                context: context,
+                icon: Icons.robot_2_outlined,
+                title: 'Ассистент',
+                subtitle: 'Раздел в разработке',
+                color: kSecondaryColor,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (_) => const AssistantScreen(),
+                  ),
+                ),
+              ),
+            ),
+            const SliverPadding(padding: EdgeInsets.only(bottom: 24)),
+          ],
+        ],
+      ),
+    ),
+  );
 }
 
-class _SectionCard extends StatelessWidget {
-  final String title, subtitle;
-  final VoidCallback onTap;
-  const _SectionCard(this.title, this.subtitle, this.onTap);
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key, this.repository});
+
+  final BudgetGoalsRepository? repository;
+
   @override
-  Widget build(BuildContext context) => InkWell(
-    onTap: onTap,
-    child: Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFBFAF5),
-        border: Border.all(color: const Color(0xFFD8D2C0)),
-        borderRadius: BorderRadius.circular(4),
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _GoalNameDialog extends StatefulWidget {
+  const _GoalNameDialog();
+
+  @override
+  State<_GoalNameDialog> createState() => _GoalNameDialogState();
+}
+
+class _GoalNameDialogState extends State<_GoalNameDialog> {
+  final _nameController = TextEditingController();
+
+  void _submit() {
+    final name = _nameController.text.trim();
+    if (name.isNotEmpty) Navigator.pop(context, name);
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: const Text('Новый расчёт'),
+    content: TextField(
+      key: const ValueKey('goalNameField'),
+      controller: _nameController,
+      autofocus: true,
+      textCapitalization: TextCapitalization.sentences,
+      decoration: const InputDecoration(
+        labelText: 'Название цели',
+        hintText: 'Например, Ремонт',
+        border: OutlineInputBorder(),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w600),
+      onSubmitted: (_) => _submit(),
+    ),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.pop(context),
+        child: const Text('Отмена'),
+      ),
+      FilledButton(onPressed: _submit, child: const Text('Создать')),
+    ],
+  );
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  late final BudgetGoalsRepository _repository;
+  List<BudgetGoal> _goals = [];
+  bool _isLoading = true;
+  int _selectedTab = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _repository = widget.repository ?? SecureBudgetGoalsRepository();
+    unawaited(_loadGoals());
+  }
+
+  Future<void> _loadGoals() async {
+    try {
+      final goals = await _repository.load();
+      if (mounted) {
+        setState(() {
+          _goals = goals..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+          _isLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _createGoal() async {
+    final name = await showDialog<String>(
+      context: context,
+      builder: (_) => const _GoalNameDialog(),
+    );
+    if (!mounted || name == null) return;
+
+    final now = DateTime.now();
+    final goal = BudgetGoal(
+      id: now.microsecondsSinceEpoch.toString(),
+      name: name,
+      draft: const {},
+      updatedAt: now,
+    );
+    try {
+      await _repository.save(goal);
+      if (!mounted) return;
+      setState(() => _goals.insert(0, goal));
+      await _openGoal(goal);
+    } catch (_) {
+      if (mounted) _showStorageError();
+    }
+  }
+
+  Future<void> _openGoal(BudgetGoal goal) async {
+    final savedGoals = await _repository.load();
+    final savedGoal =
+        savedGoals.where((item) => item.id == goal.id).firstOrNull ?? goal;
+    if (!mounted) {
+      return;
+    }
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) =>
+            BudgetFlowScreen(repository: _repository, goal: savedGoal),
+      ),
+    );
+    await _loadGoals();
+  }
+
+  Future<void> _deleteGoal(BudgetGoal goal) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Удалить расчёт?'),
+        content: Text(
+          '«${goal.name}» будет удалён без возможности восстановления.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Отмена'),
           ),
-          const SizedBox(height: 6),
-          Text(
-            subtitle,
-            style: const TextStyle(
-              fontSize: 13,
-              color: Colors.black54,
-              height: 1.4,
-            ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Удалить'),
           ),
         ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      await _repository.delete(goal.id);
+      if (mounted) {
+        setState(() => _goals.removeWhere((item) => item.id == goal.id));
+      }
+    } catch (_) {
+      if (mounted) {
+        _showStorageError();
+      }
+    }
+  }
+
+  void _showStorageError() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Не удалось сохранить расчёт на устройстве.'),
+      ),
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    final local = date.toLocal();
+    final day = local.day.toString().padLeft(2, '0');
+    final month = local.month.toString().padLeft(2, '0');
+    return '$day.$month.${local.year}';
+  }
+
+  Widget _goalTile(BudgetGoal goal) {
+    final target = double.tryParse('${goal.draft['target'] ?? ''}') ?? 0;
+    final totalKey = goal.draft['selectedScenario'] == 'optimized'
+        ? 'finalTotal'
+        : 'baselineTotal';
+    final total = double.tryParse('${goal.draft[totalKey] ?? ''}') ?? 0;
+    final progress = target > 0
+        ? (total / target).clamp(0.0, 1.0).toDouble()
+        : null;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: InkWell(
+        onTap: () => _openGoal(goal),
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: kPrimaryColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.account_balance_wallet_outlined, color: kPrimaryColor, size: 24),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          goal.name,
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: kTextPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Изменён ${_formatDate(goal.updatedAt)}',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: kTextSecondary),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Удалить расчёт ${goal.name}',
+                    onPressed: () => _deleteGoal(goal),
+                    icon: const Icon(Icons.delete_outline, size: 20),
+                    color: kErrorColor,
+                  ),
+                ],
+              ),
+              if (progress != null) ...[
+                const SizedBox(height: 16),
+                LinearProgressIndicator(
+                  value: progress,
+                  minHeight: 6,
+                  backgroundColor: kBorderColor,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                if (total >= target)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: kSecondaryColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: kSecondaryColor.withValues(alpha: 0.3)),
+                      ),
+                      child: const Text(
+                        'Цель достигается',
+                        style: TextStyle(
+                          color: Color(0xFF047857),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _calculationsTab() => Padding(
+    padding: const EdgeInsets.fromLTRB(20, 28, 20, 12),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Ваши средства\nработают на Вас',
+          style: Theme.of(context).textTheme.headlineMedium,
+        ),
+        const SizedBox(height: 9),
+        Text(
+          'Ваши расчёты бюджета',
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+        const SizedBox(height: 22),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: _createGoal,
+            icon: const Icon(Icons.add, size: 18),
+            label: const Text('Новый расчёт'),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Expanded(
+          child: _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _goals.isEmpty
+              ? const Center(child: Text('Сохранённых расчётов пока нет.'))
+              : ListView.builder(
+                  itemCount: _goals.length,
+                  itemBuilder: (context, index) => _goalTile(_goals[index]),
+                ),
+        ),
+      ],
+    ),
+  );
+
+  Widget _placeholderPanel({
+    required IconData icon,
+    required String title,
+    required String description,
+  }) => Container(
+    width: double.infinity,
+    padding: const EdgeInsets.all(20),
+    decoration: BoxDecoration(
+      color: kSurfaceColor,
+      border: Border.all(color: kBorderColor),
+      borderRadius: BorderRadius.circular(18),
+    ),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, color: kPrimaryColor),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 6),
+              Text(description, style: Theme.of(context).textTheme.bodyMedium),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+
+  Widget _otherTab({
+    required String title,
+    required String description,
+    required IconData icon,
+  }) => Padding(
+    padding: const EdgeInsets.fromLTRB(20, 28, 20, 20),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: Theme.of(context).textTheme.headlineMedium),
+        const SizedBox(height: 9),
+        Text(description, style: Theme.of(context).textTheme.bodyMedium),
+        const SizedBox(height: 24),
+        _placeholderPanel(
+          icon: icon,
+          title: title == 'Ассистент'
+              ? 'Скоро здесь появится ассистент'
+              : 'Данные на устройстве',
+          description: title == 'Ассистент'
+              ? 'Раздел пока в разработке.'
+              : 'Черновики расчётов хранятся на этом устройстве.',
+        ),
+      ],
+    ),
+  );
+
+  Widget _navigationItem(int index, String label, IconData icon) {
+    final selected = _selectedTab == index;
+    return Expanded(
+      child: InkWell(
+        onTap: () => setState(() => _selectedTab = index),
+        borderRadius: BorderRadius.circular(18),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 9),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: selected ? kPrimaryColor : kTextMuted, size: 22),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  color: selected ? kPrimaryColor : kTextMuted,
+                  fontSize: 11,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    body: SafeArea(
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 180),
+        child: _selectedTab == 0
+            ? KeyedSubtree(
+                key: const ValueKey('calculations'),
+                child: _calculationsTab(),
+              )
+            : _selectedTab == 1
+            ? KeyedSubtree(
+                key: const ValueKey('assistant'),
+                child: _otherTab(
+                  title: 'Ассистент',
+                  description: 'Помощник по финансовым вопросам',
+                  icon: Icons.chat_bubble_outline_rounded,
+                ),
+              )
+            : KeyedSubtree(
+                key: const ValueKey('settings'),
+                child: _otherTab(
+                  title: 'Настройки',
+                  description: 'Личные параметры приложения',
+                  icon: Icons.tune_rounded,
+                ),
+              ),
+      ),
+    ),
+    bottomNavigationBar: SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 6, 16, 8),
+        child: Container(
+          height: 68,
+          decoration: BoxDecoration(
+            color: _surface,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: _line),
+            boxShadow: [
+              BoxShadow(
+                color: _brand.withValues(alpha: 0.07),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              _navigationItem(0, 'Расчёты', Icons.receipt_long_outlined),
+              _navigationItem(
+                1,
+                'Ассистент',
+                Icons.chat_bubble_outline_rounded,
+              ),
+              _navigationItem(2, 'Настройки', Icons.tune_rounded),
+            ],
+          ),
+        ),
       ),
     ),
   );
@@ -410,6 +880,15 @@ class ExpenseRow {
       monthCtrls.add(TextEditingController());
     }
   }
+
+  void dispose() {
+    nameCtrl.dispose();
+    amountCtrl.dispose();
+    reductionCtrl.dispose();
+    for (final controller in monthCtrls) {
+      controller.dispose();
+    }
+  }
 }
 
 enum WizStep {
@@ -429,13 +908,21 @@ enum WizStep {
 enum ResultScenario { initial, optimized }
 
 class BudgetFlowScreen extends StatefulWidget {
-  const BudgetFlowScreen({super.key});
+  const BudgetFlowScreen({
+    super.key,
+    required this.repository,
+    required this.goal,
+  });
+
+  final BudgetGoalsRepository repository;
+  final BudgetGoal goal;
 
   @override
   State<BudgetFlowScreen> createState() => _BudgetFlowScreenState();
 }
 
-class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
+class _BudgetFlowScreenState extends State<BudgetFlowScreen>
+    with WidgetsBindingObserver {
   static const monthNames = [
     'Январь',
     'Февраль',
@@ -482,6 +969,7 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
   final incomeCtrl = TextEditingController();
   final reductionCtrl = TextEditingController();
   final depositRateCtrl = TextEditingController(text: '8');
+  final cashbackRateCtrl = TextEditingController(text: '5');
   final loanAmountCtrl = TextEditingController();
   final loanTermCtrl = TextEditingController();
   final rateCtrl = TextEditingController();
@@ -497,6 +985,7 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
   bool cardCalculated = false;
   bool depositCalculated = false;
   double calculatedDepositInterest = 0;
+  double calculatedCashbackSavings = 0;
   ResultScenario? financingScenarioChoice;
   bool financingResultShown = false;
   bool? cardHas120DayGrace;
@@ -505,6 +994,219 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
   double baselineTotal = 0;
   double finalMonthly = 0;
   double finalTotal = 0;
+  Timer? _saveTimer;
+  Future<void> _pendingSave = Future<void>.value();
+  bool _isRestoring = true;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _restoreDraft(widget.goal.draft);
+    _isRestoring = false;
+  }
+
+  @override
+  void setState(VoidCallback fn) {
+    super.setState(fn);
+    _scheduleSave();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      unawaited(_saveNow());
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _saveTimer?.cancel();
+    unawaited(_saveNow());
+    for (final controller in [
+      monthsCtrl,
+      targetCtrl,
+      incomeCtrl,
+      reductionCtrl,
+      depositRateCtrl,
+      cashbackRateCtrl,
+      loanAmountCtrl,
+      loanTermCtrl,
+      rateCtrl,
+      cardRateCtrl,
+    ]) {
+      controller.dispose();
+    }
+    for (final row in [...fixed, ...optional]) {
+      row.dispose();
+    }
+    super.dispose();
+  }
+
+  void _disposeRowsAfterFrame(Iterable<ExpenseRow> rows) {
+    final removedRows = List<ExpenseRow>.of(rows);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      for (final row in removedRows) {
+        row.dispose();
+      }
+    });
+  }
+
+  void _restoreDraft(Map<String, dynamic> draft) {
+    if (draft.isEmpty) return;
+    step = _readEnum(draft['step'], WizStep.values, WizStep.goal);
+    monthsCtrl.text = _readString(draft['months']);
+    targetCtrl.text = _readString(draft['target']);
+    incomeCtrl.text = _readString(draft['income']);
+    reductionCtrl.text = _readString(draft['reduction']);
+    depositRateCtrl.text = _readString(draft['depositRate'], '8');
+    cashbackRateCtrl.text = _readString(draft['cashbackRate'], '5');
+    loanAmountCtrl.text = _readString(draft['loanAmount']);
+    loanTermCtrl.text = _readString(draft['loanTerm']);
+    rateCtrl.text = _readString(draft['loanRate']);
+    cardRateCtrl.text = _readString(draft['cardRate']);
+    startMonth = _readInt(draft['startMonth'], startMonth).clamp(1, 12);
+    startYear = _readInt(draft['startYear'], startYear);
+    optionalIndex = _readInt(draft['optionalIndex'], 0);
+    loanCalculated = _readBool(draft['loanCalculated']);
+    loanPaymentType = _readEnum(
+      draft['loanPaymentType'],
+      LoanPaymentType.values,
+      LoanPaymentType.annuity,
+    );
+    cardCalculated = _readBool(draft['cardCalculated']);
+    depositCalculated = _readBool(draft['depositCalculated']);
+    calculatedDepositInterest = _readDouble(draft['calculatedDepositInterest']);
+    calculatedCashbackSavings = _readDouble(draft['calculatedCashbackSavings']);
+    financingScenarioChoice = draft['financingScenarioChoice'] == null
+        ? null
+        : _readEnum(
+            draft['financingScenarioChoice'],
+            ResultScenario.values,
+            ResultScenario.initial,
+          );
+    financingResultShown = _readBool(draft['financingResultShown']);
+    cardHas120DayGrace = draft['cardHas120DayGrace'] as bool?;
+    selectedScenario = _readEnum(
+      draft['selectedScenario'],
+      ResultScenario.values,
+      ResultScenario.initial,
+    );
+    baselineMonthly = _readDouble(draft['baselineMonthly']);
+    baselineTotal = _readDouble(draft['baselineTotal']);
+    finalMonthly = _readDouble(draft['finalMonthly']);
+    finalTotal = _readDouble(draft['finalTotal']);
+    fixed = _restoreRows(draft['fixed']);
+    optional = _restoreRows(draft['optional'], restoreMonths: true);
+    reductions
+      ..clear()
+      ..addEntries(
+        optional
+            .where((row) => row.reductionValue > 0)
+            .map((row) => MapEntry(row, row.reductionValue)),
+      );
+  }
+
+  List<ExpenseRow> _restoreRows(dynamic value, {bool restoreMonths = false}) {
+    if (value is! List) return [ExpenseRow()];
+    final rows = <ExpenseRow>[];
+    for (final entry in value) {
+      if (entry is! Map) continue;
+      final row = ExpenseRow()
+        ..nameCtrl.text = _readString(entry['name'])
+        ..amountCtrl.text = _readString(entry['amount'])
+        ..reductionCtrl.text = _readString(entry['reduction']);
+      final savedMonths = entry['months'];
+      if (restoreMonths && savedMonths is List) {
+        for (final month in savedMonths) {
+          row.monthCtrls.add(TextEditingController(text: _readString(month)));
+        }
+      }
+      rows.add(row);
+    }
+    return rows.isEmpty ? [ExpenseRow()] : rows;
+  }
+
+  Map<String, dynamic> _draftSnapshot() => {
+    'step': step.name,
+    'months': monthsCtrl.text,
+    'target': targetCtrl.text,
+    'income': incomeCtrl.text,
+    'reduction': reductionCtrl.text,
+    'depositRate': depositRateCtrl.text,
+    'cashbackRate': cashbackRateCtrl.text,
+    'loanAmount': loanAmountCtrl.text,
+    'loanTerm': loanTermCtrl.text,
+    'loanRate': rateCtrl.text,
+    'cardRate': cardRateCtrl.text,
+    'startMonth': startMonth,
+    'startYear': startYear,
+    'optionalIndex': optionalIndex,
+    'loanCalculated': loanCalculated,
+    'loanPaymentType': loanPaymentType.name,
+    'cardCalculated': cardCalculated,
+    'depositCalculated': depositCalculated,
+    'calculatedDepositInterest': calculatedDepositInterest,
+    'calculatedCashbackSavings': calculatedCashbackSavings,
+    'financingScenarioChoice': financingScenarioChoice?.name,
+    'financingResultShown': financingResultShown,
+    'cardHas120DayGrace': cardHas120DayGrace,
+    'selectedScenario': selectedScenario.name,
+    'baselineMonthly': baselineMonthly,
+    'baselineTotal': baselineTotal,
+    'finalMonthly': finalMonthly,
+    'finalTotal': finalTotal,
+    'fixed': fixed.map(_rowSnapshot).toList(),
+    'optional': optional.map(_rowSnapshot).toList(),
+  };
+
+  Map<String, dynamic> _rowSnapshot(ExpenseRow row) => {
+    'name': row.nameCtrl.text,
+    'amount': row.amountCtrl.text,
+    'reduction': row.reductionCtrl.text,
+    'months': row.monthCtrls.map((controller) => controller.text).toList(),
+  };
+
+  String _readString(dynamic value, [String fallback = '']) =>
+      value is String ? value : fallback;
+
+  int _readInt(dynamic value, int fallback) =>
+      value is num ? value.toInt() : fallback;
+
+  double _readDouble(dynamic value) => value is num ? value.toDouble() : 0;
+
+  bool _readBool(dynamic value) => value is bool && value;
+
+  T _readEnum<T extends Enum>(dynamic name, List<T> values, T fallback) {
+    for (final value in values) {
+      if (value.name == name) return value;
+    }
+    return fallback;
+  }
+
+  void _scheduleSave() {
+    if (_isRestoring) return;
+    _saveTimer?.cancel();
+    _saveTimer = Timer(const Duration(milliseconds: 350), () {
+      unawaited(_saveNow());
+    });
+  }
+
+  Future<void> _saveNow() async {
+    _saveTimer?.cancel();
+    if (_isRestoring) return;
+    final updatedGoal = widget.goal.copyWith(
+      draft: _draftSnapshot(),
+      updatedAt: DateTime.now(),
+    );
+    _pendingSave = _pendingSave
+        .then((_) => widget.repository.save(updatedGoal))
+        .catchError((Object _) {});
+    await _pendingSave;
+  }
 
   double get months =>
       double.tryParse(monthsCtrl.text.replaceAll(',', '.')) ?? 0;
@@ -520,6 +1222,11 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
       reductions.values.fold(0, (total, amount) => total + amount);
   double get depositRate =>
       double.tryParse(depositRateCtrl.text.replaceAll(',', '.')) ?? 8;
+  double get cashbackRate =>
+      (double.tryParse(cashbackRateCtrl.text.replaceAll(',', '.')) ?? 5).clamp(
+        0,
+        100,
+      );
   double get depositProjection {
     if (activeMonthly <= 0 || months <= 0 || depositRate <= 0) return 0;
     var balance = 0.0;
@@ -532,14 +1239,12 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
   }
 
   double get cashbackSavings {
-    final rows = <ExpenseRow>[...fixed, ...optional];
-    final total = rows.fold(0.0, (sum, row) {
+    final monthlyTotal = fixed.fold(0.0, (sum, row) {
       final name = row.name.trim();
       if (!cashbackCategories.contains(name)) return sum;
-      final amount = row.amount * months + row.periodTotal;
-      return sum + amount;
+      return sum + row.amount;
     });
-    return total * 0.05;
+    return monthlyTotal * cashbackRate / 100;
   }
 
   double get cardThreshold => (activeMonthly > 0 ? activeMonthly : 0) * 3;
@@ -655,13 +1360,60 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
     });
   }
 
+  int get _journeyStep {
+    if (step == WizStep.goal) return 1;
+    if (step == WizStep.fixedExpenses ||
+        step == WizStep.optionalExpenses ||
+        step == WizStep.baseline ||
+        step == WizStep.optionalIntro ||
+        step == WizStep.optionalEdit) {
+      return 2;
+    }
+    if (step == WizStep.recommendations) return 3;
+    return 4;
+  }
+
+  Widget _journeyProgress() => Padding(
+    padding: const EdgeInsets.only(bottom: 18),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Шаг $_journeyStep из 4',
+          style: const TextStyle(
+            color: _brand,
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 8),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: LinearProgressIndicator(
+            value: _journeyStep / 4,
+            minHeight: 6,
+            backgroundColor: _line,
+          ),
+        ),
+      ],
+    ),
+  );
+
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Расчёт бюджета')),
+    appBar: AppBar(
+      title: Text(
+        widget.goal.name,
+        style: Theme.of(context).textTheme.titleMedium,
+      ),
+    ),
     body: SafeArea(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: _screen(),
+        padding: const EdgeInsets.fromLTRB(18, 8, 18, 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [_journeyProgress(), _screen()],
+        ),
       ),
     ),
   );
@@ -696,9 +1448,20 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
   InputDecoration decoration(String label) => InputDecoration(
     labelText: label,
     isDense: true,
-    border: const OutlineInputBorder(),
     filled: true,
-    fillColor: Colors.white,
+    fillColor: _surface,
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(14),
+      borderSide: const BorderSide(color: _line),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(14),
+      borderSide: const BorderSide(color: _line),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(14),
+      borderSide: const BorderSide(color: _brand, width: 1.5),
+    ),
   );
 
   Widget field(
@@ -709,30 +1472,37 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
     controller: controller,
     keyboardType: const TextInputType.numberWithOptions(decimal: true),
     decoration: decoration(label),
-    onChanged: onChanged,
+    onChanged: (value) {
+      onChanged?.call(value);
+      _scheduleSave();
+    },
   );
 
-  Widget card(String title, String hint, Widget child) => Container(
-    width: double.infinity,
-    padding: const EdgeInsets.all(22),
-    decoration: BoxDecoration(
-      color: const Color(0xFFFBFAF5),
-      border: Border.all(color: const Color(0xFFD8D2C0)),
-      borderRadius: BorderRadius.circular(4),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+  Widget card(String title, String hint, Widget child) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(title, style: Theme.of(context).textTheme.titleLarge),
+      const SizedBox(height: 7),
+      Text(hint, style: Theme.of(context).textTheme.bodyMedium),
+      const SizedBox(height: 18),
+      Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: _surface,
+          border: Border.all(color: _line),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: _brand.withValues(alpha: 0.05),
+              blurRadius: 16,
+              offset: const Offset(0, 5),
+            ),
+          ],
         ),
-        const SizedBox(height: 5),
-        Text(hint, style: const TextStyle(fontSize: 13, color: Colors.black54)),
-        const SizedBox(height: 18),
-        child,
-      ],
-    ),
+        child: child,
+      ),
+    ],
   );
 
   Widget _goal() => card(
@@ -894,13 +1664,19 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
             !existingNames.contains(normalized);
       });
     },
-    onSelected: (category) => row.nameCtrl.text = category,
+    onSelected: (category) {
+      row.nameCtrl.text = category;
+      _scheduleSave();
+    },
     fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) =>
         TextField(
           controller: controller,
           focusNode: focusNode,
           decoration: decoration('Категория или свой расход'),
-          onChanged: (value) => row.nameCtrl.text = value,
+          onChanged: (value) {
+            row.nameCtrl.text = value;
+            _scheduleSave();
+          },
           onSubmitted: (_) => onFieldSubmitted(),
         ),
   );
@@ -925,11 +1701,13 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
                   decimal: true,
                 ),
                 decoration: decoration('₽/мес.'),
+                onChanged: (_) => _scheduleSave(),
               ),
             ),
             IconButton(
               onPressed: () => setState(() {
                 list.remove(row);
+                _disposeRowsAfterFrame([row]);
                 if (list.isEmpty) list.add(ExpenseRow());
               }),
               icon: const Icon(Icons.close),
@@ -1039,8 +1817,10 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
                                       tooltip: 'Удалить расход',
                                       onPressed: () => setState(() {
                                         list.remove(row);
-                                        if (list.isEmpty)
+                                        _disposeRowsAfterFrame([row]);
+                                        if (list.isEmpty) {
                                           list.add(ExpenseRow());
+                                        }
                                       }),
                                       icon: const Icon(Icons.close),
                                     ),
@@ -1060,6 +1840,7 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
                                         decimal: true,
                                       ),
                                   decoration: decoration('₽'),
+                                  onChanged: (_) => _scheduleSave(),
                                 ),
                               ),
                             ),
@@ -1212,6 +1993,7 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
                               decimal: true,
                             ),
                             decoration: decoration('₽'),
+                            onChanged: (_) => _scheduleSave(),
                           ),
                         ),
                       ),
@@ -1255,36 +2037,122 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
   }
 
   Widget _result() {
-    final displayMonthly = selectedScenario == ResultScenario.optimized
-        ? finalMonthly
-        : baselineMonthly;
-    final displayTotal = selectedScenario == ResultScenario.optimized
-        ? finalTotal
-        : baselineTotal;
+    final isOptimized = selectedScenario == ResultScenario.optimized;
+    final displayMonthly = isOptimized ? finalMonthly : baselineMonthly;
+    final displayTotal = isOptimized ? finalTotal : baselineTotal;
+    final goalProgress = target > 0
+        ? (displayTotal / target).clamp(0.0, 1.0)
+        : null;
+    final goalPercent = target > 0 ? (displayTotal / target * 100).round() : 0;
+
     return card(
       'Итог',
-      'Расчёт накоплений без учёта оптимизации. Сначала смотрим базовый сценарий.',
+      isOptimized
+          ? 'Оптимизированный план накоплений.'
+          : 'Базовый план накоплений без оптимизации.',
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          stat('Свободно в месяц', displayMonthly),
-          const SizedBox(height: 16),
-          stat('Экономия', totalReduction),
-          const SizedBox(height: 16),
-          stat('Накопится за ${months.toStringAsFixed(0)} мес.', displayTotal),
-          if (target > 0)
-            Padding(
-              padding: const EdgeInsets.only(top: 12),
-              child: Text(
-                displayTotal >= target
-                    ? 'Цель достигается'
-                    : 'Не хватает ${fmtNum(target - displayTotal)} ₽',
-                style: const TextStyle(fontWeight: FontWeight.w600),
+          if (goalProgress != null) ...[
+            Center(
+              child: SizedBox(
+                width: 118,
+                height: 118,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    CircularProgressIndicator(
+                      value: goalProgress,
+                      strokeWidth: 10,
+                      backgroundColor: _brandLight,
+                      strokeCap: StrokeCap.round,
+                    ),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '$goalPercent%',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        const Text(
+                          'от цели',
+                          style: TextStyle(fontSize: 11, color: _muted),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
+            const SizedBox(height: 16),
+          ],
+          Text(
+            'Накопится за ${months.toStringAsFixed(0)} мес.',
+            style: const TextStyle(color: _muted, fontSize: 13),
+          ),
+          Text(
+            '${fmtNum(displayTotal)} ₽',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              fontFamily: 'Roboto',
+              fontSize: 28,
+            ),
+          ),
+          if (target > 0)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Text(
+                'Цель: ${fmtNum(target)} ₽',
+                style: const TextStyle(color: _muted, fontSize: 12),
+              ),
+            ),
+          if (target > 0 && displayTotal >= target)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: _mint,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  child: Text(
+                    'Цель достигается',
+                    style: TextStyle(
+                      color: Color(0xFF28746D),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          const SizedBox(height: 18),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Свободно в месяц', style: TextStyle(color: _muted)),
+              Text(
+                '${fmtNum(displayMonthly)} ₽',
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+            ],
+          ),
+          if (isOptimized) ...[
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Экономия', style: TextStyle(color: _muted)),
+                Text(
+                  '${fmtNum(totalReduction)} ₽',
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ],
+            ),
+          ],
           const SizedBox(height: 20),
           Wrap(
-            spacing: 12,
+            spacing: 10,
             runSpacing: 8,
             children: [
               ElevatedButton(
@@ -1309,7 +2177,7 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 12),
           OutlinedButton(onPressed: _reset, child: const Text('Начать заново')),
         ],
       ),
@@ -1318,7 +2186,7 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
 
   Widget _recommendations() => card(
     'Рекомендации по оптимизации',
-    'Под какую ставку можно открыть вклад и какой кешбек можно получить по выбранным категориям.',
+    'Расчёт вклада и примерная оценка кешбэка по выбранным категориям.',
     Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1328,31 +2196,41 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
           onChanged: (_) => setState(() => depositCalculated = false),
         ),
         const SizedBox(height: 16),
-        OutlinedButton.icon(
-          onPressed: () => setState(() {
-            calculatedDepositInterest = depositProjection;
-            depositCalculated = true;
-          }),
-          icon: const Icon(Icons.calculate_outlined),
-          label: const Text('Рассчитать вклад'),
+        field(
+          cashbackRateCtrl,
+          'Примерный кешбэк, %',
+          onChanged: (_) => setState(() => depositCalculated = false),
         ),
-        if (depositCalculated) ...[
-          const SizedBox(height: 12),
-          Text(
-            'При ставке ${depositRate.toStringAsFixed(1)}% годовых начислится ${fmtNum(calculatedDepositInterest)} ₽ процентов.',
-            style: const TextStyle(fontWeight: FontWeight.w600),
-          ),
-        ],
-        const SizedBox(height: 16),
+        const SizedBox(height: 8),
+        const Text(
+          'Это условная оценка: реальные категории, ставки и лимиты зависят от условий банка.',
+          style: TextStyle(fontSize: 13, color: Colors.black54),
+        ),
+        const SizedBox(height: 12),
         if (cashbackSavings > 0)
           Text(
-            'Кешбек по выбранным категориям: ${fmtNum(cashbackSavings)} ₽',
+            'Оценка кешбэка: ${fmtNum(cashbackSavings)} ₽ в месяц. За весь период вы сэкономите ${fmtNum(cashbackSavings * months)} ₽.',
             style: const TextStyle(fontWeight: FontWeight.w600),
           )
         else
           const Text(
-            'Укажите категории расходов и суммы, чтобы увидеть кешбек.',
+            'Оценка кешбэка: 0 ₽ в месяц. За весь период вы сэкономите 0 ₽.',
           ),
+        const SizedBox(height: 16),
+        Text(
+          'При ставке ${depositRate.toStringAsFixed(1)}% годовых начислится ${fmtNum(depositProjection)} ₽ процентов.',
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 16),
+        ElevatedButton.icon(
+          onPressed: () => setState(() {
+            calculatedDepositInterest = depositProjection;
+            calculatedCashbackSavings = cashbackSavings;
+            depositCalculated = true;
+          }),
+          icon: const Icon(Icons.calculate_outlined),
+          label: const Text('Рассчитать рекомендации'),
+        ),
         const SizedBox(height: 8),
         const Text(
           'Согласны следовать рекомендациям по оптимизации расходов?',
@@ -1364,25 +2242,29 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
           runSpacing: 8,
           children: [
             OutlinedButton(
-              onPressed: () => setState(() {
-                selectedScenario = ResultScenario.initial;
-                step = WizStep.finalStep;
-              }),
+              onPressed: depositCalculated
+                  ? () => setState(() {
+                      selectedScenario = ResultScenario.initial;
+                      step = WizStep.finalStep;
+                    })
+                  : null,
               child: const Text('Нет, оставить базовый вариант'),
             ),
             ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  selectedScenario = ResultScenario.optimized;
-                  finalTotal =
-                      baselineTotal +
-                      totalReduction +
-                      cashbackSavings +
-                      (depositCalculated ? calculatedDepositInterest : 0);
-                  finalMonthly = months > 0 ? finalTotal / months : 0;
-                  step = WizStep.finalStep;
-                });
-              },
+              onPressed: depositCalculated
+                  ? () {
+                      setState(() {
+                        selectedScenario = ResultScenario.optimized;
+                        finalTotal =
+                            baselineTotal +
+                            totalReduction +
+                            calculatedCashbackSavings * months +
+                            (depositCalculated ? calculatedDepositInterest : 0);
+                        finalMonthly = months > 0 ? finalTotal / months : 0;
+                        step = WizStep.finalStep;
+                      });
+                    }
+                  : null,
               child: const Text('Да, применить рекомендации'),
             ),
           ],
@@ -1392,10 +2274,9 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
   );
 
   Widget _financing() {
-    final cardRecommended = shortfall < cardThreshold;
     return card(
-      'Как покрыть недостающую сумму?',
-      'Сначала считаем базовый вариант. Если хотите, на следующем шаге можно выбрать оптимизированный итог.',
+      'Сравнение сценариев',
+      'Выберите итог для расчёта. Оценка не учитывает индивидуальные условия банков.',
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1441,19 +2322,44 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
               style: const TextStyle(fontWeight: FontWeight.w600),
             ),
           ],
-          if (financingResultShown && activeMonthly > 0)
+          if (financingResultShown &&
+              selectedScenario == ResultScenario.optimized &&
+              totalReduction > 0)
             Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: Text(
-                'Перед кредитом можно открыть вклад: при накоплении ${fmtNum(activeMonthly)} ₽/мес. под ${depositRate.toStringAsFixed(1)}% годовых начислится ${fmtNum(depositProjection)} ₽ процентов.',
+                'Экономия на расходах: ${fmtNum(totalReduction)} ₽ за срок.',
+                style: const TextStyle(height: 1.45),
+              ),
+            ),
+          if (financingResultShown &&
+              selectedScenario == ResultScenario.optimized &&
+              calculatedCashbackSavings > 0)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Text(
+                'Кешбэк: ${fmtNum(calculatedCashbackSavings)} ₽ в месяц, ${fmtNum(calculatedCashbackSavings * months)} ₽ за срок.',
+                style: const TextStyle(height: 1.45),
+              ),
+            ),
+          if (financingResultShown &&
+              selectedScenario == ResultScenario.optimized &&
+              depositCalculated &&
+              calculatedDepositInterest > 0)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Text(
+                'Проценты по вкладу: ${fmtNum(calculatedDepositInterest)} ₽ за срок.',
                 style: const TextStyle(height: 1.45),
               ),
             ),
           if (financingResultShown)
             Text(
-              cardRecommended
-                  ? 'Рекомендуем кредитную карту: сумма небольшая относительно ваших свободных накоплений. Если погасить долг в льготный период, можно не переплачивать проценты.'
-                  : 'Недостающая сумма больше трёх месяцев свободных накоплений. Рассмотрите кредит и сравните переплату с условиями кредитной карты.',
+              shortfall <= 0
+                  ? 'По выбранному сценарию дефицита нет.'
+                  : shortfall < cardThreshold
+                  ? 'По упрощённой оценке дефицит меньше трёх месяцев свободных накоплений. Сравните полную стоимость кредита и карты, комиссии и сроки погашения.'
+                  : 'По упрощённой оценке дефицит больше трёх месяцев свободных накоплений. Это не рекомендация: сравните полную стоимость кредита и карты, комиссии и сроки погашения.',
               style: const TextStyle(height: 1.45),
             ),
           const SizedBox(height: 20),
@@ -1500,7 +2406,7 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
 
     return card(
       'Кредитная карта',
-      'Рекомендуем выбрать карту с беспроцентным периодом 120 дней. Уточните условия полного погашения у банка.',
+      'Укажите параметры карты для ориентировочного расчёта. Сверьте ставку, комиссии, даты и условия льготного периода с договором банка.',
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1544,10 +2450,7 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
                 onPressed: () => setState(() => step = WizStep.financing),
                 child: const Text('Назад'),
               ),
-              OutlinedButton(
-                onPressed: _resetWithAd,
-                child: const Text('В начало'),
-              ),
+              OutlinedButton(onPressed: _reset, child: const Text('В начало')),
               ElevatedButton(
                 onPressed: () {
                   if (cardRateCtrl.text.isEmpty ||
@@ -1574,7 +2477,6 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
   }
 
   Widget _loan() {
-    final term = loanTerm;
     final payment = loanPayment;
     final overpayment = loanOverpayment;
     final shorterTerm = loanCalculated ? shortestAffordableLoanTerm : null;
@@ -1654,10 +2556,7 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
                 onPressed: () => setState(() => step = WizStep.financing),
                 child: const Text('Назад'),
               ),
-              OutlinedButton(
-                onPressed: _resetWithAd,
-                child: const Text('В начало'),
-              ),
+              OutlinedButton(onPressed: _reset, child: const Text('В начало')),
               ElevatedButton(
                 onPressed: () {
                   if (loanAmount <= 0 ||
@@ -1685,30 +2584,41 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen> {
     );
   }
 
-  Future<void> _resetWithAd() async {
-    try {
-      await _yandexInterstitialAds.showIfReady();
-    } finally {
-      if (mounted) _reset();
-    }
+  void _reset() {
+    final oldRows = [...fixed, ...optional];
+    setState(() {
+      step = WizStep.goal;
+      monthsCtrl.clear();
+      targetCtrl.clear();
+      incomeCtrl.clear();
+      reductionCtrl.clear();
+      depositRateCtrl.text = '8';
+      cashbackRateCtrl.text = '5';
+      loanAmountCtrl.clear();
+      loanTermCtrl.clear();
+      rateCtrl.clear();
+      cardRateCtrl.clear();
+      startMonth = DateTime.now().month;
+      startYear = DateTime.now().year;
+      optionalIndex = 0;
+      loanCalculated = false;
+      loanPaymentType = LoanPaymentType.annuity;
+      cardCalculated = false;
+      depositCalculated = false;
+      calculatedDepositInterest = 0;
+      calculatedCashbackSavings = 0;
+      financingScenarioChoice = null;
+      financingResultShown = false;
+      cardHas120DayGrace = null;
+      selectedScenario = ResultScenario.initial;
+      baselineMonthly = 0;
+      baselineTotal = 0;
+      finalMonthly = 0;
+      finalTotal = 0;
+      fixed = [ExpenseRow()];
+      optional = [ExpenseRow()];
+      reductions.clear();
+    });
+    _disposeRowsAfterFrame(oldRows);
   }
-
-  void _reset() => setState(() {
-    step = WizStep.goal;
-    monthsCtrl.clear();
-    targetCtrl.clear();
-    incomeCtrl.clear();
-    reductionCtrl.clear();
-    loanAmountCtrl.clear();
-    loanTermCtrl.clear();
-    rateCtrl.clear();
-    cardRateCtrl.clear();
-    loanCalculated = false;
-    loanPaymentType = LoanPaymentType.annuity;
-    cardCalculated = false;
-    cardHas120DayGrace = null;
-    fixed = [ExpenseRow()];
-    optional = [ExpenseRow()];
-    reductions.clear();
-  });
 }
