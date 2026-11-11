@@ -1,7 +1,7 @@
+import 'package:fin_consultant/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:fin_assistant/budget_goals.dart';
-import 'package:fin_assistant/main.dart';
+import 'package:fin_consultant/budget_goals.dart';
 
 class InMemoryBudgetGoalsRepository implements BudgetGoalsRepository {
   final Map<String, BudgetGoal> goals = {};
@@ -26,6 +26,8 @@ Future<InMemoryBudgetGoalsRepository> openNewBudgetFlow(
 }) async {
   final repository = InMemoryBudgetGoalsRepository();
   await tester.pumpWidget(FinConsultantApp(repository: repository));
+  await tester.tap(find.text('Расчёт бюджета'));
+  await tester.pumpAndSettle();
   await tester.tap(find.text('Новый расчёт'));
   await tester.pumpAndSettle();
   await tester.enterText(find.byKey(const ValueKey('goalNameField')), name);
@@ -45,22 +47,28 @@ Future<void> createGoalFromList(WidgetTester tester, String name) async {
 }
 
 void main() {
-  testWidgets('shows calculations and bottom navigation', (tester) async {
+  testWidgets('opens saved budget calculations from the section chooser', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       FinConsultantApp(repository: InMemoryBudgetGoalsRepository()),
     );
+
+    expect(find.text('Расчёт бюджета'), findsOneWidget);
+    expect(find.text('Ассистент'), findsOneWidget);
+    expect(find.text('Новый расчёт'), findsNothing);
+    expect(
+      tester
+          .getSize(find.byKey(const ValueKey('section-Расчёт бюджета')))
+          .width,
+      tester.getSize(find.byKey(const ValueKey('section-Ассистент'))).width,
+    );
+
+    await tester.tap(find.text('Расчёт бюджета'));
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('Ваши средства'), findsOneWidget);
-    expect(find.text('Расчёты'), findsOneWidget);
-    expect(find.text('Ассистент'), findsOneWidget);
-    expect(find.text('Настройки'), findsOneWidget);
     expect(find.text('Новый расчёт'), findsOneWidget);
     expect(find.text('Сохранённых расчётов пока нет.'), findsOneWidget);
-
-    await tester.tap(find.text('Ассистент'));
-    await tester.pumpAndSettle();
-    expect(find.text('Скоро здесь появится ассистент'), findsOneWidget);
   });
 
   test('calculates card interest by actual days', () {
@@ -226,7 +234,6 @@ void main() {
       await tester.enterText(find.byType(TextField).at(1), '1000');
       await tester.tap(find.byTooltip('Растянуть сумму на все месяцы').first);
       await tester.pumpAndSettle();
-      await tester.ensureVisible(find.text('Рассчитать'));
       await tester.tap(find.text('Рассчитать'));
       await tester.pumpAndSettle();
       expect(find.text('28 000 ₽'), findsOneWidget);
@@ -359,7 +366,6 @@ void main() {
       await tester.enterText(find.byType(TextField).at(1), '1000');
       await tester.tap(find.byTooltip('Растянуть сумму на все месяцы').first);
       await tester.pumpAndSettle();
-      await tester.ensureVisible(find.text('Рассчитать'));
       await tester.tap(find.text('Рассчитать'));
       await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(ElevatedButton, 'Далее'));

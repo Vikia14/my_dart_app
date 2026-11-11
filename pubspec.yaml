@@ -1,6 +1,6 @@
-name: fin_assistant
-description: Личный финКонсультант — приложение для расчёта бюджета.
-version: 1.0.1+2
+name: fin_consultant
+description: Личный финКонсультант — планируйте бюджет, считайте накопления, управляйте кредитами и кредитными картами.
+version: 1.0.0+1
 
 environment:
   sdk: '>=3.9.0 <4.0.0'
@@ -18,3 +18,4 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+

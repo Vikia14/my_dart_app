@@ -1,186 +1,13 @@
 import 'dart:async';
 import 'dart:math' as math;
 
-import 'package:fin_assistant/budget_goals.dart';
+import 'package:fin_consultant/app_theme.dart';
+import 'package:fin_consultant/budget_goals.dart';
 import 'package:flutter/material.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(const FinConsultantApp());
-}
-
-// ============================================================================
-// Тема приложения (фирменный дизайн)
-// ============================================================================
-
-const Color kPrimaryColor = Color(0xFF4F46E5);
-const Color kPrimaryDark = Color(0xFF4338CA);
-const Color kSecondaryColor = Color(0xFF10B981);
-const Color kSurfaceColor = Color(0xFFFFFFFF);
-const Color kBackgroundColor = Color(0xFFF8FAFC);
-const Color kErrorColor = Color(0xFFF43F5E);
-const Color kSuccessColor = Color(0xFF10B981);
-const Color kTextPrimary = Color(0xFF0F172A);
-const Color kTextSecondary = Color(0xFF64748B);
-const Color kTextMuted = Color(0xFF94A3B8);
-const Color kBorderColor = Color(0xFFE2E8F0);
-const Color kDividerColor = Color(0xFFE2E8F0);
-
-ThemeData _buildTheme() {
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ),
-    );
-  }
-}
-
-  final ColorScheme colorScheme = ColorScheme(
-    brightness: Brightness.light,
-    primary: kPrimaryColor,
-    onPrimary: Colors.white,
-    primaryContainer: kPrimaryColor.withValues(alpha: 0.1),
-    onPrimaryContainer: kPrimaryDark,
-    secondary: kSecondaryColor,
-    onSecondary: Colors.white,
-    secondaryContainer: kSecondaryColor.withValues(alpha: 0.1),
-    onSecondaryContainer: Color(0xFF047857),
-    surface: kSurfaceColor,
-    onSurface: kTextPrimary,
-    surfaceVariant: kBackgroundColor,
-    onSurfaceVariant: kTextSecondary,
-    background: kBackgroundColor,
-    onBackground: kTextPrimary,
-    error: kErrorColor,
-    onError: Colors.white,
-    errorContainer: kErrorColor.withValues(alpha: 0.1),
-    onErrorContainer: Color(0xFFBE123C),
-    inverseSurface: kTextPrimary,
-    onInverseSurface: Colors.white,
-    inversePrimary: kPrimaryColor,
-  );
-
-  return ThemeData(
-    useMaterial3: true,
-    colorScheme: colorScheme,
-    scaffoldBackgroundColor: kBackgroundColor,
-    appBarTheme: AppBarTheme(
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      centerTitle: false,
-      scrolledUnderElevation: 0,
-      iconTheme: const IconThemeData(color: kTextPrimary),
-      titleTextStyle: const TextStyle(
-        fontSize: 20,
-        fontWeight: FontWeight.w700,
-        color: kTextPrimary,
-      ),
-    ),
-    elevatedButtonTheme: ElevatedButtonThemeData(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: kPrimaryColor,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        shadowColor: Colors.transparent,
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        textStyle: const TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    ),
-    outlinedButtonTheme: OutlinedButtonThemeData(
-      style: OutlinedButton.styleFrom(
-        foregroundColor: kPrimaryColor,
-        side: const BorderSide(color: kPrimaryColor, width: 1.5),
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        textStyle: const TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    ),
-    inputDecorationTheme: InputDecorationTheme(
-      filled: true,
-      fillColor: kSurfaceColor,
-      contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: kBorderColor, width: 1),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: kBorderColor, width: 1),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: kPrimaryColor, width: 2),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: kErrorColor, width: 1),
-      ),
-      focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: kErrorColor, width: 2),
-      ),
-      labelStyle: const TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
-        color: kTextSecondary,
-      ),
-      hintStyle: const TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.w400,
-        color: kTextMuted,
-      ),
-    ),
-  );
-}
-
-class FinConsultantApp extends StatelessWidget {
-  final BudgetGoalsRepository repository;
-
-  const FinConsultantApp({super.key, this.repository});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'ФинКонсультант',
-      debugShowCheckedModeBanner: false,
-      theme: _buildTheme(),
-      home: MainMenuScreen(repository: repository ?? SecureBudgetGoalsRepository()),
-    );
-  }
 }
 
 String fmtNum(double n) {
@@ -262,130 +89,173 @@ double calculateLoanOverpayment(
       principal;
 }
 
+class FinConsultantApp extends StatelessWidget {
+  const FinConsultantApp({super.key, this.repository});
+
+  final BudgetGoalsRepository? repository;
+
+  @override
+  Widget build(BuildContext context) => MaterialApp(
+    title: 'Личный ФинКонсультант',
+    theme: appTheme,
+    home: MainMenuScreen(repository: repository),
+    debugShowCheckedModeBanner: false,
+  );
+}
+
 class MainMenuScreen extends StatelessWidget {
   const MainMenuScreen({super.key, this.repository});
 
   final BudgetGoalsRepository? repository;
 
-  Widget _menuCard({
+  Widget _sectionCard({
     required BuildContext context,
-    required IconData icon,
     required String title,
-    required String subtitle,
-    required Color color,
+    required String description,
+    required IconData icon,
     required VoidCallback onTap,
-  }) => Card(
-    key: ValueKey('menu-$title'),
-    margin: const EdgeInsets.only(bottom: 16),
-    child: InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Row(
-          children: [
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Icon(icon, color: color, size: 28),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: kTextPrimary,
+    bool accent = false,
+    String? badge,
+  }) {
+    final titleColor = accent ? Colors.white : AppColors.ink;
+    final textColor = accent ? const Color(0xFFE9E1F7) : AppColors.muted;
+    return Container(
+      key: ValueKey('section-$title'),
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: appCardDecoration(
+        color: accent ? AppColors.primary : AppColors.tealSoft,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(24),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(24),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: accent ? const Color(0xFF7A5FCB) : AppColors.teal,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    icon,
+                    color: accent ? Colors.white : AppColors.ink,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          color: titleColor,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(description, style: TextStyle(color: textColor)),
+                      if (badge != null) ...[
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.peach,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            badge,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.peachDark,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                if (accent)
+                  Container(
+                    width: 40,
+                    height: 40,
+                    margin: const EdgeInsets.only(left: 8),
+                    decoration: const BoxDecoration(
+                      color: AppColors.peach,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.chevron_right,
+                      color: AppColors.peachDark,
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: kTextSecondary,
-                    ),
-                  ),
-                ],
-              ),
+              ],
             ),
-            Icon(Icons.chevron_right, color: kTextMuted),
-          ],
+          ),
         ),
       ),
-    ),
-  );
+    );
+  }
 
   @override
   Widget build(BuildContext context) => Scaffold(
     body: SafeArea(
-      child: CustomScrollView(
-        slivers: [
-          SliverPadding(
-            padding: const EdgeInsets.all(20),
-            sliver: SliverToBoxAdapter(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 8),
-                  Text(
-                    'ФинКонсультант',
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: kTextPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Планируйте бюджет, считайте накопления и управляйте долгами',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: kTextSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                ],
-              ),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const AppLogo(),
+            const SizedBox(height: 20),
+            const Text('Личный финКонсультант', style: AppText.display),
+            const SizedBox(height: 8),
+            const Text(
+              'Выберите, с чем хотите поработать',
+              style: AppText.subtitle,
             ),
-            SliverToBoxAdapter(
-              child: _menuCard(
-                context: context,
-                icon: Icons.account_balance_wallet_outlined,
-                title: 'Расчёт бюджета',
-                subtitle:
-                    'Накопления, доходы, расходы, кредиты и карты в одном расчёте',
-                color: kPrimaryColor,
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(
-                    builder: (_) => HomeScreen(repository: repository),
-                  ),
+            const SizedBox(height: 28),
+            _sectionCard(
+              context: context,
+              title: 'Расчёт бюджета',
+              description:
+                  'Считаем, сколько вы накопите к сроку, и что изменится, если скорректировать необязательные траты.',
+              icon: Icons.calculate_outlined,
+              accent: true,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (_) => HomeScreen(repository: repository),
                 ),
               ),
             ),
-            SliverToBoxAdapter(
-              child: _menuCard(
-                context: context,
-                icon: Icons.robot_2_outlined,
-                title: 'Ассистент',
-                subtitle: 'Раздел в разработке',
-                color: kSecondaryColor,
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(
-                    builder: (_) => const AssistantScreen(),
-                  ),
+            _sectionCard(
+              context: context,
+              title: 'Ассистент',
+              description: 'Раздел в разработке.',
+              icon: Icons.chat_bubble_outline,
+              badge: 'Скоро',
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (_) => const AssistantScreen(),
                 ),
               ),
             ),
-            const SliverPadding(padding: EdgeInsets.only(bottom: 24)),
           ],
-        ],
+        ),
       ),
     ),
   );
@@ -450,7 +320,6 @@ class _HomeScreenState extends State<HomeScreen> {
   late final BudgetGoalsRepository _repository;
   List<BudgetGoal> _goals = [];
   bool _isLoading = true;
-  int _selectedTab = 0;
 
   @override
   void initState() {
@@ -562,282 +431,71 @@ class _HomeScreenState extends State<HomeScreen> {
     return '$day.$month.${local.year}';
   }
 
-  Widget _goalTile(BudgetGoal goal) {
-    final target = double.tryParse('${goal.draft['target'] ?? ''}') ?? 0;
-    final totalKey = goal.draft['selectedScenario'] == 'optimized'
-        ? 'finalTotal'
-        : 'baselineTotal';
-    final total = double.tryParse('${goal.draft[totalKey] ?? ''}') ?? 0;
-    final progress = target > 0
-        ? (total / target).clamp(0.0, 1.0).toDouble()
-        : null;
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: InkWell(
-        onTap: () => _openGoal(goal),
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: kPrimaryColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(Icons.account_balance_wallet_outlined, color: kPrimaryColor, size: 24),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          goal.name,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: kTextPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Изменён ${_formatDate(goal.updatedAt)}',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: kTextSecondary),
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    tooltip: 'Удалить расчёт ${goal.name}',
-                    onPressed: () => _deleteGoal(goal),
-                    icon: const Icon(Icons.delete_outline, size: 20),
-                    color: kErrorColor,
-                  ),
-                ],
-              ),
-              if (progress != null) ...[
-                const SizedBox(height: 16),
-                LinearProgressIndicator(
-                  value: progress,
-                  minHeight: 6,
-                  backgroundColor: kBorderColor,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                if (total >= target)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: kSecondaryColor.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: kSecondaryColor.withValues(alpha: 0.3)),
-                      ),
-                      child: const Text(
-                        'Цель достигается',
-                        style: TextStyle(
-                          color: Color(0xFF047857),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _calculationsTab() => Padding(
-    padding: const EdgeInsets.fromLTRB(20, 28, 20, 12),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Ваши средства\nработают на Вас',
-          style: Theme.of(context).textTheme.headlineMedium,
-        ),
-        const SizedBox(height: 9),
-        Text(
-          'Ваши расчёты бюджета',
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
-        const SizedBox(height: 22),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton.icon(
-            onPressed: _createGoal,
-            icon: const Icon(Icons.add, size: 18),
-            label: const Text('Новый расчёт'),
-          ),
-        ),
-        const SizedBox(height: 16),
-        Expanded(
-          child: _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : _goals.isEmpty
-              ? const Center(child: Text('Сохранённых расчётов пока нет.'))
-              : ListView.builder(
-                  itemCount: _goals.length,
-                  itemBuilder: (context, index) => _goalTile(_goals[index]),
-                ),
-        ),
-      ],
-    ),
-  );
-
-  Widget _placeholderPanel({
-    required IconData icon,
-    required String title,
-    required String description,
-  }) => Container(
-    width: double.infinity,
-    padding: const EdgeInsets.all(20),
-    decoration: BoxDecoration(
-      color: kSurfaceColor,
-      border: Border.all(color: kBorderColor),
-      borderRadius: BorderRadius.circular(18),
-    ),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, color: kPrimaryColor),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 6),
-              Text(description, style: Theme.of(context).textTheme.bodyMedium),
-            ],
-          ),
-        ),
-      ],
-    ),
-  );
-
-  Widget _otherTab({
-    required String title,
-    required String description,
-    required IconData icon,
-  }) => Padding(
-    padding: const EdgeInsets.fromLTRB(20, 28, 20, 20),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title, style: Theme.of(context).textTheme.headlineMedium),
-        const SizedBox(height: 9),
-        Text(description, style: Theme.of(context).textTheme.bodyMedium),
-        const SizedBox(height: 24),
-        _placeholderPanel(
-          icon: icon,
-          title: title == 'Ассистент'
-              ? 'Скоро здесь появится ассистент'
-              : 'Данные на устройстве',
-          description: title == 'Ассистент'
-              ? 'Раздел пока в разработке.'
-              : 'Черновики расчётов хранятся на этом устройстве.',
-        ),
-      ],
-    ),
-  );
-
-  Widget _navigationItem(int index, String label, IconData icon) {
-    final selected = _selectedTab == index;
-    return Expanded(
-      child: InkWell(
-        onTap: () => setState(() => _selectedTab = index),
-        borderRadius: BorderRadius.circular(18),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 9),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, color: selected ? kPrimaryColor : kTextMuted, size: 22),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: TextStyle(
-                  color: selected ? kPrimaryColor : kTextMuted,
-                  fontSize: 11,
-                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+  Widget _goalTile(BudgetGoal goal) => Container(
+    margin: const EdgeInsets.only(bottom: 12),
+    decoration: appCardDecoration(),
+    child: Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(24),
+      clipBehavior: Clip.antiAlias,
+      child: Row(
+        children: [
+          Expanded(
+            child: ListTile(
+              contentPadding: const EdgeInsets.only(left: 20, right: 4),
+              title: Text(
+                goal.name,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
-            ],
+              subtitle: Text('Изменён ${_formatDate(goal.updatedAt)}'),
+              onTap: () => _openGoal(goal),
+            ),
           ),
-        ),
+          IconButton(
+            tooltip: 'Удалить расчёт ${goal.name}',
+            onPressed: () => _deleteGoal(goal),
+            icon: const Icon(Icons.delete_outline),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
 
   @override
   Widget build(BuildContext context) => Scaffold(
     body: SafeArea(
-      child: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 180),
-        child: _selectedTab == 0
-            ? KeyedSubtree(
-                key: const ValueKey('calculations'),
-                child: _calculationsTab(),
-              )
-            : _selectedTab == 1
-            ? KeyedSubtree(
-                key: const ValueKey('assistant'),
-                child: _otherTab(
-                  title: 'Ассистент',
-                  description: 'Помощник по финансовым вопросам',
-                  icon: Icons.chat_bubble_outline_rounded,
-                ),
-              )
-            : KeyedSubtree(
-                key: const ValueKey('settings'),
-                child: _otherTab(
-                  title: 'Настройки',
-                  description: 'Личные параметры приложения',
-                  icon: Icons.tune_rounded,
-                ),
-              ),
-      ),
-    ),
-    bottomNavigationBar: SafeArea(
-      top: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 6, 16, 8),
-        child: Container(
-          height: 68,
-          decoration: BoxDecoration(
-            color: _surface,
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: _line),
-            boxShadow: [
-              BoxShadow(
-                color: _brand.withValues(alpha: 0.07),
-                blurRadius: 16,
-                offset: const Offset(0, 4),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Личный ФинКонсультант', style: AppText.display),
+            const SizedBox(height: 8),
+            const Text('Ваши расчёты бюджета', style: AppText.subtitle),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: _createGoal,
+                icon: const Icon(Icons.add),
+                label: const Text('Новый расчёт'),
               ),
-            ],
-          ),
-          child: Row(
-            children: [
-              _navigationItem(0, 'Расчёты', Icons.receipt_long_outlined),
-              _navigationItem(
-                1,
-                'Ассистент',
-                Icons.chat_bubble_outline_rounded,
-              ),
-              _navigationItem(2, 'Настройки', Icons.tune_rounded),
-            ],
-          ),
+            ),
+            const SizedBox(height: 20),
+            Expanded(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _goals.isEmpty
+                  ? const Center(child: Text('Сохранённых расчётов пока нет.'))
+                  : ListView.builder(
+                      itemCount: _goals.length,
+                      itemBuilder: (context, index) => _goalTile(_goals[index]),
+                    ),
+            ),
+          ],
         ),
       ),
     ),
@@ -853,7 +511,7 @@ class AssistantScreen extends StatelessWidget {
       child: Text(
         'Скоро здесь появится финансовый ассистент.\n\nРаздел подключится к отдельному API-сервису.',
         textAlign: TextAlign.center,
-        style: TextStyle(color: Colors.black54),
+        style: TextStyle(color: AppColors.muted),
       ),
     ),
   );
@@ -940,6 +598,7 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen>
 
   static const expenseCategories = [
     'Жилье',
+    'Коммунальные услуги',
     'Питание',
     'Транспорт',
     'Здравоохранение',
@@ -948,12 +607,20 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen>
     'Страховки',
     'Связь',
     'Образование',
+    'Дети',
+    'Домашние животные',
+    'Одежда',
   ];
 
   static const optionalExpenseCategories = [
     'Маркетплейсы',
     'Театры',
     'Кафе и рестораны',
+    'Развлечения',
+    'Хобби',
+    'Красота',
+    'Подарки',
+    'Путешествия',
   ];
 
   static const cashbackCategories = [
@@ -961,6 +628,10 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen>
     'Питание',
     'Транспорт',
     'Здравоохранение',
+    'Коммунальные услуги',
+    'Домашние животные',
+    'Одежда',
+    'Связь',
   ];
 
   WizStep step = WizStep.goal;
@@ -1360,63 +1031,53 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen>
     });
   }
 
-  int get _journeyStep {
-    if (step == WizStep.goal) return 1;
-    if (step == WizStep.fixedExpenses ||
-        step == WizStep.optionalExpenses ||
-        step == WizStep.baseline ||
-        step == WizStep.optionalIntro ||
-        step == WizStep.optionalEdit) {
-      return 2;
-    }
-    if (step == WizStep.recommendations) return 3;
-    return 4;
-  }
-
-  Widget _journeyProgress() => Padding(
-    padding: const EdgeInsets.only(bottom: 18),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Шаг $_journeyStep из 4',
-          style: const TextStyle(
-            color: _brand,
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        const SizedBox(height: 8),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: LinearProgressIndicator(
-            value: _journeyStep / 4,
-            minHeight: 6,
-            backgroundColor: _line,
-          ),
-        ),
-      ],
-    ),
-  );
-
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
-      title: Text(
-        widget.goal.name,
-        style: Theme.of(context).textTheme.titleMedium,
+      title: Text(widget.goal.name),
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(14),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(5),
+            child: LinearProgressIndicator(value: _progress, minHeight: 8),
+          ),
+        ),
       ),
     ),
     body: SafeArea(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(18, 8, 18, 24),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [_journeyProgress(), _screen()],
+          children: [
+            if (_stepNumber != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Text('Шаг $_stepNumber из 4', style: AppText.step),
+              ),
+            _screen(),
+          ],
         ),
       ),
     ),
   );
+
+  // Первые три шага мастера нумеруем, четвёртый шаг: результат и всё после него.
+  int? get _stepNumber => switch (step) {
+    WizStep.goal => 1,
+    WizStep.fixedExpenses => 2,
+    WizStep.optionalExpenses => 3,
+    _ => null,
+  };
+
+  double get _progress => switch (step) {
+    WizStep.goal => 0.25,
+    WizStep.fixedExpenses => 0.5,
+    WizStep.optionalExpenses => 0.75,
+    _ => 1.0,
+  };
 
   Widget _screen() {
     switch (step) {
@@ -1445,24 +1106,8 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen>
     }
   }
 
-  InputDecoration decoration(String label) => InputDecoration(
-    labelText: label,
-    isDense: true,
-    filled: true,
-    fillColor: _surface,
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(14),
-      borderSide: const BorderSide(color: _line),
-    ),
-    enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(14),
-      borderSide: const BorderSide(color: _line),
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(14),
-      borderSide: const BorderSide(color: _brand, width: 1.5),
-    ),
-  );
+  // Рамки, заливка и отступы заданы в InputDecorationTheme (app_theme.dart).
+  InputDecoration decoration(String label) => InputDecoration(labelText: label);
 
   Widget field(
     TextEditingController controller,
@@ -1478,31 +1123,23 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen>
     },
   );
 
-  Widget card(String title, String hint, Widget child) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(title, style: Theme.of(context).textTheme.titleLarge),
-      const SizedBox(height: 7),
-      Text(hint, style: Theme.of(context).textTheme.bodyMedium),
-      const SizedBox(height: 18),
-      Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          color: _surface,
-          border: Border.all(color: _line),
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: _brand.withValues(alpha: 0.05),
-              blurRadius: 16,
-              offset: const Offset(0, 5),
-            ),
-          ],
+  Widget card(String title, String hint, Widget child) => Container(
+    width: double.infinity,
+    padding: const EdgeInsets.all(22),
+    decoration: appCardDecoration(),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: AppText.cardTitle),
+        const SizedBox(height: 5),
+        Text(
+          hint,
+          style: const TextStyle(fontSize: 13, color: AppColors.muted),
         ),
-        child: child,
-      ),
-    ],
+        const SizedBox(height: 18),
+        child,
+      ],
+    ),
   );
 
   Widget _goal() => card(
@@ -1873,11 +1510,8 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen>
   Widget stat(String label, double value) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Text(label, style: const TextStyle(color: Colors.black54)),
-      Text(
-        '${fmtNum(value)} ₽',
-        style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w700),
-      ),
+      Text(label, style: const TextStyle(color: AppColors.muted)),
+      Text('${fmtNum(value)} ₽', style: AppText.bigNumber),
     ],
   );
 
@@ -2037,122 +1671,38 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen>
   }
 
   Widget _result() {
-    final isOptimized = selectedScenario == ResultScenario.optimized;
-    final displayMonthly = isOptimized ? finalMonthly : baselineMonthly;
-    final displayTotal = isOptimized ? finalTotal : baselineTotal;
-    final goalProgress = target > 0
-        ? (displayTotal / target).clamp(0.0, 1.0)
-        : null;
-    final goalPercent = target > 0 ? (displayTotal / target * 100).round() : 0;
-
+    final displayMonthly = selectedScenario == ResultScenario.optimized
+        ? finalMonthly
+        : baselineMonthly;
+    final displayTotal = selectedScenario == ResultScenario.optimized
+        ? finalTotal
+        : baselineTotal;
     return card(
       'Итог',
-      isOptimized
-          ? 'Оптимизированный план накоплений.'
-          : 'Базовый план накоплений без оптимизации.',
+      'Расчёт накоплений без учёта оптимизации. Сначала смотрим базовый сценарий.',
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (goalProgress != null) ...[
-            Center(
-              child: SizedBox(
-                width: 118,
-                height: 118,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    CircularProgressIndicator(
-                      value: goalProgress,
-                      strokeWidth: 10,
-                      backgroundColor: _brandLight,
-                      strokeCap: StrokeCap.round,
-                    ),
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          '$goalPercent%',
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        const Text(
-                          'от цели',
-                          style: TextStyle(fontSize: 11, color: _muted),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
+          stat('Свободно в месяц', displayMonthly),
+          if (selectedScenario == ResultScenario.optimized) ...[
             const SizedBox(height: 16),
+            stat('Экономия', totalReduction),
           ],
-          Text(
-            'Накопится за ${months.toStringAsFixed(0)} мес.',
-            style: const TextStyle(color: _muted, fontSize: 13),
-          ),
-          Text(
-            '${fmtNum(displayTotal)} ₽',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontFamily: 'Roboto',
-              fontSize: 28,
-            ),
-          ),
+          const SizedBox(height: 16),
+          stat('Накопится за ${months.toStringAsFixed(0)} мес.', displayTotal),
           if (target > 0)
             Padding(
-              padding: const EdgeInsets.only(top: 6),
-              child: Text(
-                'Цель: ${fmtNum(target)} ₽',
-                style: const TextStyle(color: _muted, fontSize: 12),
+              padding: const EdgeInsets.only(top: 12),
+              child: StatusChip(
+                ok: displayTotal >= target,
+                text: displayTotal >= target
+                    ? 'Цель достигается'
+                    : 'Не хватает ${fmtNum(target - displayTotal)} ₽',
               ),
             ),
-          if (target > 0 && displayTotal >= target)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: _mint,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  child: Text(
-                    'Цель достигается',
-                    style: TextStyle(
-                      color: Color(0xFF28746D),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          const SizedBox(height: 18),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('Свободно в месяц', style: TextStyle(color: _muted)),
-              Text(
-                '${fmtNum(displayMonthly)} ₽',
-                style: const TextStyle(fontWeight: FontWeight.w700),
-              ),
-            ],
-          ),
-          if (isOptimized) ...[
-            const SizedBox(height: 10),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text('Экономия', style: TextStyle(color: _muted)),
-                Text(
-                  '${fmtNum(totalReduction)} ₽',
-                  style: const TextStyle(fontWeight: FontWeight.w700),
-                ),
-              ],
-            ),
-          ],
           const SizedBox(height: 20),
           Wrap(
-            spacing: 10,
+            spacing: 12,
             runSpacing: 8,
             children: [
               ElevatedButton(
@@ -2177,7 +1727,7 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen>
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 24),
           OutlinedButton(onPressed: _reset, child: const Text('Начать заново')),
         ],
       ),
@@ -2202,9 +1752,8 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen>
           onChanged: (_) => setState(() => depositCalculated = false),
         ),
         const SizedBox(height: 8),
-        const Text(
+        const InfoNote(
           'Это условная оценка: реальные категории, ставки и лимиты зависят от условий банка.',
-          style: TextStyle(fontSize: 13, color: Colors.black54),
         ),
         const SizedBox(height: 12),
         if (cashbackSavings > 0)
@@ -2436,9 +1985,8 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen>
             const SizedBox(height: 16),
             stat('Оценка процентов за $cardRepaymentDays дней', interest),
             const SizedBox(height: 8),
-            Text(
+            InfoNote(
               'Оценка срока рассчитана по свободным накоплениям ${fmtNum(activeMonthly)} ₽ в месяц. При льготном периоде первые 3 месяца накоплений уменьшают долг без начисления процентов; далее проценты считаются за фактическое число дней по ставке ${cardRate.toStringAsFixed(2)}% годовых и календарному году 365/366 дней. Общая сумма к возврату: ${fmtNum(cardTotalRepayment)} ₽.',
-              style: const TextStyle(fontSize: 13, color: Colors.black54),
             ),
           ],
           const SizedBox(height: 20),

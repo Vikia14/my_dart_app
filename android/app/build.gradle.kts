@@ -1,3 +1,4 @@
+import com.android.build.gradle.internal.api.BaseVariantOutputImpl
 import java.io.FileInputStream
 import java.util.Properties
 
@@ -34,7 +35,7 @@ if (releaseBuildRequested) {
 }
 
 android {
-    namespace = "com.example.my_dart_app"
+    namespace = "com.example.Финансовый ассистент"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
