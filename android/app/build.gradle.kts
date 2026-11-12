@@ -35,7 +35,7 @@ if (releaseBuildRequested) {
 }
 
 android {
-    namespace = "com.example.Финансовый ассистент"
+    namespace = "com.example.fin_consultant"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -45,7 +45,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "finconsultant.budget"
+        applicationId = "com.example.fin_consultant"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = maxOf(flutter.minSdkVersion, 23)

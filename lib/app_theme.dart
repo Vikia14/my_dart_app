@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -40,6 +42,16 @@ class AppText {
   static const step = TextStyle(
     fontSize: 14,
     fontWeight: FontWeight.w700,
+    color: AppColors.primary,
+  );
+  static const section = TextStyle(
+    fontSize: 16,
+    fontWeight: FontWeight.w800,
+    color: AppColors.ink,
+  );
+  static const year = TextStyle(
+    fontSize: 18,
+    fontWeight: FontWeight.w800,
     color: AppColors.primary,
   );
   static const bigNumber = TextStyle(
@@ -152,6 +164,18 @@ ThemeData buildAppTheme() {
       focusedBorder: _border(AppColors.primary),
       errorBorder: _border(const Color(0xFFB3261E)),
       focusedErrorBorder: _border(const Color(0xFFB3261E)),
+    ),
+    dataTableTheme: const DataTableThemeData(
+      headingRowColor: WidgetStatePropertyAll(AppColors.primarySoft),
+      headingTextStyle: TextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.w800,
+        color: AppColors.ink,
+      ),
+      dataRowMinHeight: 64,
+      dataRowMaxHeight: 80,
+      columnSpacing: 20,
+      dividerThickness: 1,
     ),
     progressIndicatorTheme: const ProgressIndicatorThemeData(
       color: AppColors.primary,
@@ -267,4 +291,155 @@ class InfoNote extends StatelessWidget {
       ],
     ),
   );
+}
+
+/// Группа кнопок действий. Заменяет Wrap: кнопки выстраиваются
+/// на всю ширину карточки, а короткие «Назад»/«В начало» стоят в одном ряду.
+class ActionButtons extends StatelessWidget {
+  const ActionButtons({
+    super.key,
+    this.spacing = 12,
+    this.runSpacing = 8,
+    required this.children,
+  });
+
+  final double spacing;
+  final double runSpacing;
+  final List<Widget> children;
+
+  static String _label(Widget w) {
+    if (w is ButtonStyleButton) {
+      final child = w.child;
+      if (child is Text) return child.data ?? '';
+    }
+    return '';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    var lead = 0;
+    while (lead < children.length &&
+        lead < 2 &&
+        children[lead] is OutlinedButton &&
+        _label(children[lead]).length <= 10) {
+      lead++;
+    }
+    final blocks = <Widget>[];
+    if (lead == 1 && children.length == 2) {
+      // «Назад» + основная кнопка: один ряд
+      blocks.add(
+        Row(
+          children: [
+            Expanded(flex: 2, child: children[0]),
+            SizedBox(width: spacing),
+            Expanded(flex: 3, child: children[1]),
+          ],
+        ),
+      );
+    } else if (lead == 2 && children.length > 2) {
+      // «Назад» + «В начало» в ряд, основная кнопка ниже
+      blocks.add(
+        Row(
+          children: [
+            Expanded(child: children[0]),
+            SizedBox(width: spacing),
+            Expanded(child: children[1]),
+          ],
+        ),
+      );
+      blocks.addAll(children.sublist(2));
+    } else {
+      blocks.addAll(children);
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (var i = 0; i < blocks.length; i++) ...[
+          if (i > 0) SizedBox(height: spacing),
+          blocks[i],
+        ],
+      ],
+    );
+  }
+}
+
+/// Кольцо прогресса к цели. Больше 100%: второй круг бирюзовым.
+class GoalRing extends StatelessWidget {
+  const GoalRing({super.key, required this.value});
+
+  final double value;
+
+  @override
+  Widget build(BuildContext context) {
+    final percent = (value * 100).round();
+    return Semantics(
+      label: 'Выполнено $percent% цели',
+      child: SizedBox(
+        width: 168,
+        height: 168,
+        child: CustomPaint(
+          painter: _RingPainter(value),
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '$percent%',
+                  style: const TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.ink,
+                  ),
+                ),
+                const Text('от цели', style: AppText.subtitle),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RingPainter extends CustomPainter {
+  _RingPainter(this.value);
+
+  final double value;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const stroke = 14.0;
+    final rect = Offset.zero & size;
+    final arcRect = rect.deflate(stroke / 2);
+    Paint paint(Color color) => Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = stroke
+      ..strokeCap = StrokeCap.round
+      ..color = color;
+    canvas.drawArc(arcRect, 0, 2 * math.pi, false, paint(AppColors.line));
+    final first = value.clamp(0.0, 1.0);
+    if (first > 0) {
+      canvas.drawArc(
+        arcRect,
+        -math.pi / 2,
+        2 * math.pi * first,
+        false,
+        paint(AppColors.primary),
+      );
+    }
+    final second = (value - 1).clamp(0.0, 1.0);
+    if (second > 0) {
+      canvas.drawArc(
+        arcRect,
+        -math.pi / 2,
+        2 * math.pi * second,
+        false,
+        paint(AppColors.teal),
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_RingPainter old) => old.value != value;
 }

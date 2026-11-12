@@ -24,6 +24,10 @@ Future<InMemoryBudgetGoalsRepository> openNewBudgetFlow(
   WidgetTester tester, {
   String name = 'Тестовая цель',
 }) async {
+  // Карточки стали просторнее: берём высокий экран, чтобы все кнопки были видны.
+  tester.view.physicalSize = const Size(800, 2000);
+  tester.view.devicePixelRatio = 1.0;
+  addTearDown(tester.view.reset);
   final repository = InMemoryBudgetGoalsRepository();
   await tester.pumpWidget(FinConsultantApp(repository: repository));
   await tester.tap(find.text('Расчёт бюджета'));

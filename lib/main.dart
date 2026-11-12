@@ -96,7 +96,7 @@ class FinConsultantApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => MaterialApp(
-    title: 'Личный ФинКонсультант',
+    title: 'Личный финКонсультант',
     theme: appTheme,
     home: MainMenuScreen(repository: repository),
     debugShowCheckedModeBanner: false,
@@ -472,7 +472,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Личный ФинКонсультант', style: AppText.display),
+            const Text('Личный финКонсультант', style: AppText.display),
             const SizedBox(height: 8),
             const Text('Ваши расчёты бюджета', style: AppText.subtitle),
             const SizedBox(height: 24),
@@ -489,7 +489,23 @@ class _HomeScreenState extends State<HomeScreen> {
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : _goals.isEmpty
-                  ? const Center(child: Text('Сохранённых расчётов пока нет.'))
+                  ? const Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.savings_outlined,
+                            size: 56,
+                            color: AppColors.lilac,
+                          ),
+                          SizedBox(height: 12),
+                          Text(
+                            'Сохранённых расчётов пока нет.',
+                            style: AppText.subtitle,
+                          ),
+                        ],
+                      ),
+                    )
                   : ListView.builder(
                       itemCount: _goals.length,
                       itemBuilder: (context, index) => _goalTile(_goals[index]),
@@ -598,7 +614,6 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen>
 
   static const expenseCategories = [
     'Жилье',
-    'Коммунальные услуги',
     'Питание',
     'Транспорт',
     'Здравоохранение',
@@ -607,20 +622,12 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen>
     'Страховки',
     'Связь',
     'Образование',
-    'Дети',
-    'Домашние животные',
-    'Одежда',
   ];
 
   static const optionalExpenseCategories = [
     'Маркетплейсы',
     'Театры',
     'Кафе и рестораны',
-    'Развлечения',
-    'Хобби',
-    'Красота',
-    'Подарки',
-    'Путешествия',
   ];
 
   static const cashbackCategories = [
@@ -628,10 +635,6 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen>
     'Питание',
     'Транспорт',
     'Здравоохранение',
-    'Коммунальные услуги',
-    'Домашние животные',
-    'Одежда',
-    'Связь',
   ];
 
   WizStep step = WizStep.goal;
@@ -1182,22 +1185,27 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen>
         const SizedBox(height: 12),
         field(incomeCtrl, 'Ежемесячный доход, ₽'),
         const SizedBox(height: 24),
-        ElevatedButton(
-          onPressed: () {
-            if (months <= 0 ||
-                months != months.roundToDouble() ||
-                (double.tryParse(incomeCtrl.text.replaceAll(',', '.')) ?? 0) <=
-                    0) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Укажите целое число месяцев и доход.'),
-                ),
-              );
-              return;
-            }
-            setState(() => step = WizStep.fixedExpenses);
-          },
-          child: const Text('Далее'),
+        ActionButtons(
+          children: [
+            ElevatedButton(
+              onPressed: () {
+                if (months <= 0 ||
+                    months != months.roundToDouble() ||
+                    (double.tryParse(incomeCtrl.text.replaceAll(',', '.')) ??
+                            0) <=
+                        0) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Укажите целое число месяцев и доход.'),
+                    ),
+                  );
+                  return;
+                }
+                setState(() => step = WizStep.fixedExpenses);
+              },
+              child: const Text('Далее'),
+            ),
+          ],
         ),
       ],
     ),
@@ -1211,7 +1219,7 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen>
       children: [
         rows('Постоянные расходы', fixed),
         const SizedBox(height: 24),
-        Wrap(
+        ActionButtons(
           spacing: 12,
           runSpacing: 8,
           children: [
@@ -1237,7 +1245,7 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen>
       children: [
         monthlyRows('Необязательные расходы', optional),
         const SizedBox(height: 20),
-        Wrap(
+        ActionButtons(
           spacing: 12,
           runSpacing: 8,
           children: [
@@ -1321,27 +1329,114 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen>
   Widget rows(String title, List<ExpenseRow> list) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+      Text(title, style: AppText.section),
       const SizedBox(height: 8),
       ...list.map(
-        (row) => Row(
+        (row) => Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppColors.primarySoft,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _expenseCategorySelector(row, expenseCategories),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: row.amountCtrl,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      decoration: decoration('₽/мес.'),
+                      onChanged: (_) => _scheduleSave(),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    onPressed: () => setState(() {
+                      list.remove(row);
+                      _disposeRowsAfterFrame([row]);
+                      if (list.isEmpty) list.add(ExpenseRow());
+                    }),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+      ActionButtons(
+        children: [
+          OutlinedButton(
+            onPressed: () => setState(() => list.add(ExpenseRow())),
+            child: const Text('+ Добавить строку'),
+          ),
+        ],
+      ),
+    ],
+  );
+
+  Widget monthlyRows(String title, List<ExpenseRow> list) {
+    for (final row in list) {
+      row.ensureMonths(savingMonths);
+    }
+    // Месяцы, сгруппированные по годам: год -> индексы месяцев.
+    final years = <int, List<int>>{};
+    for (var index = 0; index < savingMonths; index++) {
+      final date = DateTime(startYear, startMonth + index);
+      years.putIfAbsent(date.year, () => []).add(index);
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (final row in list) _optionalExpenseCard(row, list, years),
+        ActionButtons(
+          children: [
+            OutlinedButton.icon(
+              onPressed: () => setState(() => list.add(ExpenseRow())),
+              icon: const Icon(Icons.add),
+              label: const Text('Добавить расход'),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  /// Один необязательный расход: название сверху, суммы по месяцам сеткой
+  /// по три в ряд, без горизонтальной прокрутки.
+  Widget _optionalExpenseCard(
+    ExpenseRow row,
+    List<ExpenseRow> list,
+    Map<int, List<int>> years,
+  ) => Container(
+    margin: const EdgeInsets.only(bottom: 12),
+    padding: const EdgeInsets.all(14),
+    decoration: BoxDecoration(
+      color: AppColors.primarySoft,
+      borderRadius: BorderRadius.circular(20),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
           children: [
             Expanded(
-              flex: 2,
-              child: _expenseCategorySelector(row, expenseCategories),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: TextField(
-                controller: row.amountCtrl,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                decoration: decoration('₽/мес.'),
-                onChanged: (_) => _scheduleSave(),
+              child: _expenseCategorySelector(
+                row,
+                optionalExpenseCategories,
+                siblingRows: list,
               ),
             ),
+            const SizedBox(width: 4),
             IconButton(
+              tooltip: 'Удалить расход',
               onPressed: () => setState(() {
                 list.remove(row);
                 _disposeRowsAfterFrame([row]);
@@ -1351,161 +1446,65 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen>
             ),
           ],
         ),
-      ),
-      OutlinedButton(
-        onPressed: () => setState(() => list.add(ExpenseRow())),
-        child: const Text('+ Добавить строку'),
-      ),
-    ],
-  );
-
-  Widget monthlyRows(String title, List<ExpenseRow> list) {
-    for (final row in list) {
-      row.ensureMonths(savingMonths);
-    }
-    final tables = <Widget>[];
-    var firstMonthIndex = 0;
-    while (firstMonthIndex < savingMonths) {
-      final firstDate = DateTime(startYear, startMonth + firstMonthIndex);
-      var endMonthIndex = firstMonthIndex + 1;
-      while (endMonthIndex < savingMonths &&
-          DateTime(startYear, startMonth + endMonthIndex).year ==
-              firstDate.year) {
-        endMonthIndex++;
-      }
-      final monthIndexes = [
-        for (var index = firstMonthIndex; index < endMonthIndex; index++) index,
-      ];
-      tables.add(
-        Padding(
-          padding: const EdgeInsets.only(bottom: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '${firstDate.year}',
-                style: const TextStyle(fontWeight: FontWeight.w600),
-              ),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: DataTable(
-                  columnSpacing: 12,
-                  horizontalMargin: 8,
-                  columns: [
-                    const DataColumn(label: Text('Расход')),
-                    for (final index in monthIndexes)
-                      DataColumn(
-                        label: Text(
-                          monthNames[DateTime(
-                                startYear,
-                                startMonth + index,
-                              ).month -
-                              1],
-                        ),
-                      ),
-                  ],
-                  rows: [
-                    for (final row in list)
-                      DataRow(
-                        cells: [
-                          DataCell(
-                            SizedBox(
-                              width: 280,
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: firstMonthIndex == 0
-                                        ? _expenseCategorySelector(
-                                            row,
-                                            optionalExpenseCategories,
-                                            siblingRows: list,
-                                          )
-                                        : Text(
-                                            row.name.trim().isEmpty
-                                                ? 'Расход'
-                                                : row.name,
-                                          ),
-                                  ),
-                                  if (firstMonthIndex == 0) ...[
-                                    IconButton(
-                                      tooltip: 'Растянуть сумму на все месяцы',
-                                      onPressed: () => setState(() {
-                                        final source = row.monthCtrls
-                                            .map(
-                                              (controller) => controller.text,
-                                            )
-                                            .firstWhere(
-                                              (value) =>
-                                                  value.trim().isNotEmpty,
-                                              orElse: () => '',
-                                            );
-                                        if (source.isNotEmpty) {
-                                          for (final controller
-                                              in row.monthCtrls) {
-                                            controller.text = source;
-                                          }
-                                        }
-                                      }),
-                                      icon: const Icon(
-                                        Icons.keyboard_double_arrow_right,
-                                      ),
-                                    ),
-                                    IconButton(
-                                      tooltip: 'Удалить расход',
-                                      onPressed: () => setState(() {
-                                        list.remove(row);
-                                        _disposeRowsAfterFrame([row]);
-                                        if (list.isEmpty) {
-                                          list.add(ExpenseRow());
-                                        }
-                                      }),
-                                      icon: const Icon(Icons.close),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            ),
-                          ),
-                          for (final index in monthIndexes)
-                            DataCell(
-                              SizedBox(
-                                width: 100,
-                                child: TextField(
-                                  controller: row.monthCtrls[index],
-                                  keyboardType:
-                                      const TextInputType.numberWithOptions(
-                                        decimal: true,
-                                      ),
-                                  decoration: decoration('₽'),
-                                  onChanged: (_) => _scheduleSave(),
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                  ],
-                ),
-              ),
-            ],
+        const SizedBox(height: 4),
+        Tooltip(
+          message: 'Растянуть сумму на все месяцы',
+          child: TextButton.icon(
+            onPressed: () => setState(() {
+              final source = row.monthCtrls
+                  .map((controller) => controller.text)
+                  .firstWhere(
+                    (value) => value.trim().isNotEmpty,
+                    orElse: () => '',
+                  );
+              if (source.isNotEmpty) {
+                for (final controller in row.monthCtrls) {
+                  controller.text = source;
+                }
+              }
+            }),
+            icon: const Icon(Icons.keyboard_double_arrow_right),
+            label: const Text('Одна сумма на все месяцы'),
           ),
         ),
-      );
-      firstMonthIndex = endMonthIndex;
-    }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-        const SizedBox(height: 8),
-        ...tables,
-        OutlinedButton.icon(
-          onPressed: () => setState(() => list.add(ExpenseRow())),
-          icon: const Icon(Icons.add),
-          label: const Text('Добавить расход'),
-        ),
+        for (final entry in years.entries) ...[
+          const SizedBox(height: 8),
+          Text('${entry.key}', style: AppText.year),
+          const SizedBox(height: 8),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final width = ((constraints.maxWidth - 16) / 3).floorToDouble();
+              return Wrap(
+                spacing: 8,
+                runSpacing: 12,
+                children: [
+                  for (final index in entry.value)
+                    SizedBox(
+                      width: width,
+                      child: TextField(
+                        controller: row.monthCtrls[index],
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        decoration: decoration(
+                          monthNames[DateTime(
+                                    startYear,
+                                    startMonth + index,
+                                  ).month -
+                                  1]
+                              .substring(0, 3),
+                        ).copyWith(suffixText: '₽'),
+                        onChanged: (_) => _scheduleSave(),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
+        ],
       ],
-    );
-  }
+    ),
+  );
 
   Widget stat(String label, double value) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1525,7 +1524,7 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen>
         const SizedBox(height: 16),
         stat('Накопится за ${months.toStringAsFixed(0)} мес.', baselineTotal),
         const SizedBox(height: 24),
-        Wrap(
+        ActionButtons(
           spacing: 12,
           runSpacing: 8,
           children: [
@@ -1570,7 +1569,7 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen>
             ),
           ),
         const SizedBox(height: 16),
-        Wrap(
+        ActionButtons(
           spacing: 12,
           runSpacing: 8,
           children: [
@@ -1638,7 +1637,7 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen>
             ),
           ),
           const SizedBox(height: 16),
-          Wrap(
+          ActionButtons(
             spacing: 12,
             runSpacing: 8,
             children: [
@@ -1683,6 +1682,10 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen>
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (target > 0) ...[
+            Center(child: GoalRing(value: displayTotal / target)),
+            const SizedBox(height: 20),
+          ],
           stat('Свободно в месяц', displayMonthly),
           if (selectedScenario == ResultScenario.optimized) ...[
             const SizedBox(height: 16),
@@ -1701,7 +1704,7 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen>
               ),
             ),
           const SizedBox(height: 20),
-          Wrap(
+          ActionButtons(
             spacing: 12,
             runSpacing: 8,
             children: [
@@ -1728,7 +1731,14 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen>
             ],
           ),
           const SizedBox(height: 24),
-          OutlinedButton(onPressed: _reset, child: const Text('Начать заново')),
+          ActionButtons(
+            children: [
+              OutlinedButton(
+                onPressed: _reset,
+                child: const Text('Начать заново'),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -1786,7 +1796,7 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen>
           style: TextStyle(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 20),
-        Wrap(
+        ActionButtons(
           spacing: 12,
           runSpacing: 8,
           children: [
@@ -1849,18 +1859,22 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen>
             }),
           ),
           const SizedBox(height: 12),
-          ElevatedButton(
-            onPressed: financingScenarioChoice == null
-                ? null
-                : () => setState(() {
-                    selectedScenario = financingScenarioChoice!;
-                    financingResultShown = true;
-                    loanAmountCtrl.text = shortfall.toStringAsFixed(0);
-                    loanCalculated = false;
-                    cardCalculated = false;
-                    cardHas120DayGrace = null;
-                  }),
-            child: const Text('Показать итог'),
+          ActionButtons(
+            children: [
+              ElevatedButton(
+                onPressed: financingScenarioChoice == null
+                    ? null
+                    : () => setState(() {
+                        selectedScenario = financingScenarioChoice!;
+                        financingResultShown = true;
+                        loanAmountCtrl.text = shortfall.toStringAsFixed(0);
+                        loanCalculated = false;
+                        cardCalculated = false;
+                        cardHas120DayGrace = null;
+                      }),
+                child: const Text('Показать итог'),
+              ),
+            ],
           ),
           if (financingResultShown) ...[
             const SizedBox(height: 16),
@@ -1912,7 +1926,7 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen>
               style: const TextStyle(height: 1.45),
             ),
           const SizedBox(height: 20),
-          Wrap(
+          ActionButtons(
             spacing: 12,
             runSpacing: 8,
             children: [
@@ -1990,7 +2004,7 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen>
             ),
           ],
           const SizedBox(height: 20),
-          Wrap(
+          ActionButtons(
             spacing: 12,
             runSpacing: 8,
             children: [
@@ -2096,7 +2110,7 @@ class _BudgetFlowScreenState extends State<BudgetFlowScreen>
             ],
             const SizedBox(height: 20),
           ],
-          Wrap(
+          ActionButtons(
             spacing: 12,
             runSpacing: 8,
             children: [
